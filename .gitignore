@@ -1,0 +1,7 @@
+./bus-booking-backend/node_modules
+.env
+dist
+./seti-himalayan/node_modules
+.expo
+dist
+web-build

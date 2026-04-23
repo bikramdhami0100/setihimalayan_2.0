@@ -1,0 +1,51 @@
+{
+  "name": "seti-himalayan",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "cross-env NODE_ENV=production npx expo start --android",
+    "ios": "cross-env NODE_ENV=production npx expo start --ios",
+    "web": "cross-env NODE_ENV=production npx expo start --web"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/bottom-tabs": "^7.15.9",
+    "@react-navigation/drawer": "^7.9.8",
+    "@react-navigation/native": "^7.2.2",
+    "@react-navigation/native-stack": "^7.14.11",
+    "@react-navigation/stack": "^7.8.10",
+    "@tanstack/react-query": "^5.99.2",
+    "axios": "^1.15.2",
+    "expo": "~54.0.33",
+    "expo-constants": "^55.0.15",
+    "expo-notifications": "^55.0.20",
+    "expo-secure-store": "^55.0.13",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-hook-form": "^7.73.1",
+    "react-native": "0.81.5",
+    "react-native-calendars": "^1.1314.0",
+    "react-native-maps": "1.20.1",
+    "react-native-paper": "^5.15.1",
+    "react-native-pdf": "^7.0.4",
+    "react-native-qrcode-svg": "^6.3.21",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0",
+    "react-native-socket.io-client": "^1.4.8",
+    "react-native-vector-icons": "^10.3.0",
+    "react-native-web": "^0.21.0",
+    "react-native-webview": "^13.16.1",
+    "socket.io-client": "^4.8.3",
+    "victory-native": "^41.20.2",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
+  },
+  "private": true,
+  "devDependencies": {
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "cross-env": "^10.1.0"
+  }
+}
