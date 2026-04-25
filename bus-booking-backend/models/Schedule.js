@@ -54,39 +54,74 @@ class Schedule {
         return rows;
     }
 
+ 
     static async findAll(filters = {}) {
-        let query = `
-            SELECT s.*, b.bus_number, b.bus_type, r.origin, r.destination
-            FROM schedules s
-            JOIN buses b ON b.id = s.bus_id
-            JOIN routes r ON r.id = s.route_id
-            WHERE s.deleted_at IS NULL
-        `;
-        const values = [];
-        if (filters.route_id) {
-            query += ' AND s.route_id = ?';
-            values.push(filters.route_id);
-        }
-        if (filters.bus_id) {
-            query += ' AND s.bus_id = ?';
-            values.push(filters.bus_id);
-        }
-        if (filters.status) {
-            query += ' AND s.status = ?';
-            values.push(filters.status);
-        }
-        if (filters.from_date) {
-            query += ' AND DATE(s.departure_time) >= ?';
-            values.push(filters.from_date);
-        }
-        if (filters.to_date) {
-            query += ' AND DATE(s.departure_time) <= ?';
-            values.push(filters.to_date);
-        }
-        query += ' ORDER BY s.departure_time ASC';
-        const [rows] = await pool.execute(query, values);
-        return rows;
+        // order of clauses: WHERE -> ORDER BY -> LIMIT
+        
+    let query = `
+        SELECT s.*, b.bus_number, b.bus_type, r.origin, r.destination
+        FROM schedules s
+        JOIN buses b ON b.id = s.bus_id
+        JOIN routes r ON r.id = s.route_id
+        WHERE s.deleted_at IS NULL 
+    `;
+    let countQuery = `
+        SELECT COUNT(*) as total
+        FROM schedules s
+        JOIN buses b ON b.id = s.bus_id
+        JOIN routes r ON r.id = s.route_id
+        WHERE s.deleted_at IS NULL
+    `;
+
+    const values = [];
+
+    if (filters.route_id) {
+        query += ' AND s.route_id = ?';
+        values.push(filters.route_id);
     }
+
+    if (filters.bus_id) {
+        query += ' AND s.bus_id = ?';
+        values.push(filters.bus_id);
+    }
+
+    if (filters.status) {
+        query += ' AND s.status = ?';
+        values.push(filters.status);
+    }
+
+    if (filters.from_date) {
+        query += ' AND DATE(s.departure_time) >= ?';
+        values.push(filters.from_date);
+    }
+
+    if (filters.to_date) {
+        query += ' AND DATE(s.departure_time) <= ?';
+        values.push(filters.to_date);
+    }
+
+    if (filters.search) {
+        const search = `%${filters.search}%`;
+        query += ' AND (b.bus_number LIKE ? OR r.origin LIKE ? OR r.destination LIKE ?)';
+        values.push(search, search, search);
+    }
+
+    // ✅ ORDER BY comes BEFORE LIMIT
+    query += ' ORDER BY s.departure_time ASC';
+
+    if (filters.page && filters.limit) {
+        const offset = (filters.page - 1) * filters.limit;
+        query += ' LIMIT ? OFFSET ?';
+        values.push(Number(filters.limit), Number(offset));
+    } else if (filters.limit) {
+        query += ' LIMIT ?';
+        values.push(Number(filters.limit));
+    }
+
+    const [rows] = await pool.execute(query, values);
+    const [countRows] = await pool.execute(countQuery);
+    return { schedule: rows, total: countRows[0].total  };
+}
 
     static async updateAvailableSeats(scheduleId, seatCountChange) {
         await pool.execute(

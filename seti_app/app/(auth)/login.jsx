@@ -5,6 +5,7 @@ import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { AuthContext } from "../../context/AuthContext";
+import { setItem } from "../../utils/storage";
 
 const { width, height } = Dimensions.get("window");
 
@@ -21,6 +22,7 @@ export default function Login() {
     if (!email || !password) return;
 
     const result = await login(email, password);
+    // setItem("user", JSON.stringify(result.user));   // Store user data for session persistence, adjust as needed
     console.log(result.user)
     if (result.success) {
       const isAdmin = result.user?.role === 'admin' || result.user?.role === 'super_admin';

@@ -7,7 +7,8 @@ import {
   clearAuthData, 
   getUser as getStoredUser, 
   setUser as setStoredUser,
-  getAccessToken 
+  getAccessToken, 
+  setItem
 } from '../utils/storage';
 import { STORAGE_KEYS } from '../utils/constants';
 
@@ -25,6 +26,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const storedUser = await getStoredUser();
         const token = await getAccessToken();
+        setItem('token', token); // Store token in AsyncStorage for API calls if needed
         if (storedUser && token) {
           setUser(storedUser);
           setIsAuthenticated(true);

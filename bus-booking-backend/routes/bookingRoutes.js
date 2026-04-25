@@ -5,7 +5,8 @@ import {
     getUserBookings,
     getBookingDetails,
     cancelBooking,
-    downloadTicket
+    downloadTicket,
+    getAllBookings
 } from '../controllers/bookingController.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate, bookingSchema, cancelBookingSchema } from '../middleware/validation.js';
@@ -23,5 +24,6 @@ router.get('/my-bookings', getUserBookings);
 router.get('/reference/:reference', getBookingDetails);
 router.post('/:reference/cancel', validate(cancelBookingSchema), simpleAudit('CANCEL', 'booking'), cancelBooking);
 router.get('/:reference/ticket', downloadTicket);
+router.get("/bookings",    authenticate, getAllBookings); // Admin route to get all bookings with pagination and search
 
 export default router;

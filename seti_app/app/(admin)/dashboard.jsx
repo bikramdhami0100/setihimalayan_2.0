@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext} from "react";
 import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView, ActivityIndicator, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { getAdminDashboard, getPopularRoutes } from "../../api/reports";
 import { getBuses } from "../../api/buses";
 import { getRoutes } from "../../api/routes";
+import { useAdminData } from "../../context/AdminContext";
 
 export default function Dashboard() {
+  const all_data=useAdminData();
+  console.log(all_data);
   const [activeTab, setActiveTab] = useState("Buses");
   const [revenueTimeframe, setRevenueTimeframe] = useState("30 Days");
   const [isLoading, setIsLoading] = useState(true);
@@ -135,7 +138,7 @@ export default function Dashboard() {
         <View className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-gray-100">
           <Text className="text-[#1d3557] text-base font-semibold mb-5">Popular Routes</Text>
           
-          {popularRoutesData.map((route, idx) => (
+          {/* {popularRoutesData?.map((route, idx) => (
             <View key={idx} className="mb-4">
               <View className="flex-row justify-between mb-2">
                 <Text className="text-gray-800 text-xs font-medium">{route.origin} → {route.destination}</Text>
@@ -148,7 +151,7 @@ export default function Dashboard() {
                 />
               </View>
             </View>
-          ))}
+          ))} */}
           
           <TouchableOpacity className="mt-4 py-3 border border-gray-200 rounded-xl items-center">
             <Text className="text-[#457b9d] font-semibold text-sm">View All Analytics</Text>
@@ -178,7 +181,7 @@ export default function Dashboard() {
                 <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider text-center">Operator</Text>
                 <Text className="flex-[0.8] text-gray-500 text-[10px] font-bold tracking-wider text-right">Type</Text>
               </View>
-              {buses.map((bus) => (
+              {/* {buses.map((bus) => (
                 <View key={bus._id} className="flex-row px-5 py-4 border-b border-gray-100 items-center">
                   <View className="flex-1">
                     <Text className="text-[#1e3a8a] font-bold text-xs">{bus.bus_number}</Text>
@@ -191,7 +194,7 @@ export default function Dashboard() {
                     <Text className="text-gray-400 text-[10px] text-right leading-tight uppercase">{bus.bus_type}</Text>
                   </View>
                 </View>
-              ))}
+              ))} */}
             </View>
           )}
 
@@ -201,12 +204,12 @@ export default function Dashboard() {
                 <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider">Route</Text>
                 <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider text-right">Distance</Text>
               </View>
-              {routes.map((r) => (
+              {/* {routes.map((r) => (
                 <View key={r._id} className="flex-row px-5 py-4 border-b border-gray-100 items-center">
                   <Text className="flex-1 text-[#1e3a8a] font-bold text-xs">{r.origin} - {r.destination}</Text>
                   <Text className="flex-1 text-gray-800 text-xs text-right">{r.distance} km</Text>
                 </View>
-              ))}
+              ))} */}
             </View>
           )}
 

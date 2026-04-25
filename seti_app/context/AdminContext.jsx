@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 import * as busApi from '../api/buses';
 import * as bookingApi from '../api/bookings';
 import * as routeApi from '../api/routes';
@@ -55,6 +55,7 @@ export function AdminProvider({ children }) {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
       const res = await busApi.getBuses({ page: page + 1, limit, search });
+      console.log(res,"buses")
       setBuses(res.data.data.buses || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0 });
     } finally {
@@ -69,7 +70,12 @@ export function AdminProvider({ children }) {
     try {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
-      const res = await bookingApi.getBookings({ page: page + 1, limit, search });
+      // get token from async/storage or native storage depending on your auth implementation
+      const data = await getProfile(); // Assuming this returns an object with the token, adjust as needed
+      // Include the token in the request headers if your API requires it for authentication
+      // console.log(tokens.data.refresh_token_hash,"ok")
+      let tokens = data.data.refresh_token_hash; // Adjust based on actual response structure
+      const res = await bookingApi.getAllBookings(tokens,{ page: page + 1, limit, search });
       setBookings(res.data.data.bookings || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0 });
     } finally {
@@ -96,13 +102,19 @@ export function AdminProvider({ children }) {
     const key = 'dashboard';
     setKeyLoading(key, true);
     try {
-      const res = await reportApi.getDashboardStats();
+      const res = await reportApi.getUtilizationReport();
       setDashboard(res.data.data);
     } finally {
       setKeyLoading(key, false);
     }
   }, []);
-
+    //   Initial data fetch can be triggered here  i.e. fetchDashboard() or fetchBuses() etc. or can be triggered in respective screens
+ useEffect(() => {
+    fetchDashboard();
+    fetchBuses();
+    fetchBookings();
+    fetchRoutes();
+  } , []);
   // ── Combined Context Object
   const value = {
     // Data

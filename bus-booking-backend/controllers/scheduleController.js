@@ -38,15 +38,28 @@ export const searchSchedules = async (req, res, next) => {
 
 export const getAllSchedules = async (req, res, next) => {
     try {
+        const { route_id,bus_id,from_date,to_date, status, search, page, limit } = req.query;
         const filters = {
-            route_id: req.query.route_id,
-            bus_id: req.query.bus_id,
-            status: req.query.status,
-            from_date: req.query.from_date,
-            to_date: req.query.to_date
+            route_id,
+            bus_id,
+            from_date,
+            to_date,
+            status,
+            search,
+            page: page ? parseInt(page) : undefined,
+            limit: limit ? parseInt(limit) : undefined
+
         };
-        const schedules = await Schedule.findAll(filters);
-        successResponse(res, 'Schedules retrieved', { schedules });
+        const {schedule,total} = await Schedule.findAll(filters);
+        successResponse(res, 'Schedules retrieved', { 
+                schedules: schedule,
+                pagination: {
+                    page: filters.page || 1,
+                    limit: filters.limit || schedule.length,
+                    total: total,
+                    totalPages:  filters.limit ? Math.ceil(total / filters.limit):1
+                }   
+         });
     } catch (err) {
         next(err);
     }
