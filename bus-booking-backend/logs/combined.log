@@ -907,3 +907,12 @@
 {"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:08:24"}
 {"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:09:24"}
 {"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:10:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:11:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:12:24"}
+{"level":"error","message":{"ip":"::1","message":"","method":"GET","stack":"AggregateError: \n    at Route.findAll (file:///D:/setihimalayan/bus-booking-backend/models/Route.js:38:35)\n    at getAllRoutes (file:///D:/setihimalayan/bus-booking-backend/controllers/routeController.js:17:36)\n    at Layer.handleRequest (D:\\setihimalayan\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\setihimalayan\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/setihimalayan/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/setihimalayan/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","url":"/api/routes"},"service":"bus-booking-api","timestamp":"2026-04-25 18:13:23"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:13:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:14:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:15:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:16:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:17:24"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-25 18:18:24"}
