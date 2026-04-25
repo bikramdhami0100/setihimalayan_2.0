@@ -16,7 +16,7 @@ reviews:
       enabled: true
     ast_grep:
       enabled: true
-
+  review_on_push: true
 instructions: |
   This is a full-stack project consisting of:
   - Frontend: `seti_app` (React Native/Expo)
