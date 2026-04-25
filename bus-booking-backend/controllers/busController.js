@@ -16,12 +16,24 @@ export const createBus = async (req, res, next) => {
 
 export const getAllBuses = async (req, res, next) => {
     try {
-        const { bus_type, status } = req.query;
-        const filters = {};
-        if (bus_type) filters.bus_type = bus_type;
-        if (status) filters.status = status;
-        const buses = await Bus.findAll(filters);
-        successResponse(res, 'Buses retrieved', { buses });
+        const { bus_type, status, search, page, limit } = req.query;
+        const filters = {
+            bus_type,
+            status,
+            search,
+            page: page ? parseInt(page) : undefined,
+            limit: limit ? parseInt(limit) : undefined
+        };
+        const { buses, total } = await Bus.findAll(filters);
+        successResponse(res, 'Buses retrieved', { 
+            buses,
+            pagination: {
+                total,
+                page: filters.page || 1,
+                limit: filters.limit || total,
+                totalPages: filters.limit ? Math.ceil(total / filters.limit) : 1
+            }
+        });
     } catch (err) {
         next(err);
     }

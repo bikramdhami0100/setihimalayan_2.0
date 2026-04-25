@@ -42,18 +42,42 @@ class Bus {
 
     static async findAll(filters = {}) {
         let query = 'SELECT * FROM buses WHERE deleted_at IS NULL';
+        let countQuery = 'SELECT COUNT(*) as total FROM buses WHERE deleted_at IS NULL';
         const values = [];
-        if (filters.bus_type) {
-            query += ' AND bus_type = ?';
-            values.push(filters.bus_type);
+        const countValues = [];
+
+        const addFilter = (condition, value) => {
+            query += ` AND ${condition}`;
+            countQuery += ` AND ${condition}`;
+            values.push(value);
+            countValues.push(value);
+        };
+
+        if (filters.bus_type) addFilter('bus_type = ?', filters.bus_type);
+        if (filters.status) addFilter('status = ?', filters.status);
+        if (filters.search) {
+            const searchTerm = `%${filters.search}%`;
+            query += ' AND (bus_number LIKE ? OR registration_number LIKE ?)';
+            countQuery += ' AND (bus_number LIKE ? OR registration_number LIKE ?)';
+            values.push(searchTerm, searchTerm);
+            countValues.push(searchTerm, searchTerm);
         }
-        if (filters.status) {
-            query += ' AND status = ?';
-            values.push(filters.status);
-        }
+
         query += ' ORDER BY created_at DESC';
+
+        if (filters.page && filters.limit) {
+            const offset = (filters.page - 1) * filters.limit;
+            query += ' LIMIT ? OFFSET ?';
+            values.push(Number(filters.limit), Number(offset));
+        }
+
         const [rows] = await pool.execute(query, values);
-        return rows;
+        const [countResult] = await pool.execute(countQuery, countValues);
+        
+        return {
+            buses: rows,
+            total: countResult[0].total
+        };
     }
 
     static async update(id, updateData) {

@@ -1,18 +1,19 @@
 import express from 'express';
-import { 
-    register, 
-    login, 
-    refreshToken, 
-    getProfile, 
-    updateProfile, 
-    changePassword, 
-    logout 
+import {
+    register,
+    login,
+    refreshToken,
+    getProfile,
+    updateProfile,
+    changePassword,
+    resetPassword,
+    logout
 } from '../controllers/authController.js';
-import { 
-    validate, 
-    registerSchema, 
-    loginSchema, 
-    changePasswordSchema 
+import {
+    validate,
+    registerSchema,
+    loginSchema,
+    changePasswordSchema
 } from '../middleware/validation.js';
 import { authenticate } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
@@ -24,10 +25,12 @@ const router = express.Router();
 router.post('/register', validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
 router.post('/refresh-token', refreshToken);
-router.get('/',(req, res) => res.json({ success: true, message: 'Auth API is working' }));  
+router.get('/', (req, res) => res.json({ success: true, message: 'Auth API is working' }));
 // Protected routes
 router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfile);
+// reset password routes
+router.post('/reset-password', resetPassword);
 router.post('/change-password', authenticate, validate(changePasswordSchema), changePassword);
 router.post('/logout', authenticate, logout);
 router.post('/upload-profile-image', authenticate, uploadProfileImage, handleUploadError, async (req, res) => {
