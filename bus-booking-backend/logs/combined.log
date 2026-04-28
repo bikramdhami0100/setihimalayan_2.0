@@ -1077,3 +1077,512 @@
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-25 22:46:05"}
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-25 22:47:05"}
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-25 22:48:05"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-25 22:49:05"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 11:51:19"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 11:51:19"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 11:51:19"}
+{"level":"error","message":"Cleanup error: ","service":"bus-booking-api","timestamp":"2026-04-27 11:51:19"}
+{"ip":"::1","level":"error","message":"Unknown database 'bus_booking_system'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown database 'bus_booking_system'\n    at Bus.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:74:35)\n    at getAllBuses (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:27:44)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","timestamp":"2026-04-27 11:52:07","url":"/api/buses?page=1&limit=10&search="}
+{"ip":"::1","level":"error","message":"Unknown database 'bus_booking_system'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown database 'bus_booking_system'\n    at Route.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Route.js:38:35)\n    at getAllRoutes (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/routeController.js:17:36)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","timestamp":"2026-04-27 11:52:07","url":"/api/routes?page=1&limit=10"}
+{"ip":"::1","level":"error","message":"Unknown database 'bus_booking_system'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown database 'bus_booking_system'\n    at Route.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Route.js:38:35)\n    at getAllRoutes (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/routeController.js:17:36)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","timestamp":"2026-04-27 11:52:07","url":"/api/routes?limit=5"}
+{"ip":"::1","level":"error","message":"Unknown database 'bus_booking_system'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown database 'bus_booking_system'\n    at Bus.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:74:35)\n    at getAllBuses (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:27:44)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","timestamp":"2026-04-27 11:52:07","url":"/api/buses?limit=5"}
+{"ip":"::1","level":"error","message":"Unknown database 'bus_booking_system'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown database 'bus_booking_system'\n    at Bus.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:74:35)\n    at getAllBuses (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:27:44)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","timestamp":"2026-04-27 11:52:19","url":"/api/buses?page=1&limit=10&search="}
+{"ip":"::1","level":"error","message":"Unknown database 'bus_booking_system'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown database 'bus_booking_system'\n    at Route.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Route.js:38:35)\n    at getAllRoutes (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/routeController.js:17:36)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:929:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/node_modules/express-rate-limit/dist/index.mjs:801:5","timestamp":"2026-04-27 11:52:19","url":"/api/routes?page=1&limit=10"}
+{"level":"error","message":"Cleanup error: Unknown database 'bus_booking_system'","service":"bus-booking-api","timestamp":"2026-04-27 11:52:19"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 11:53:16"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 11:53:16"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 11:53:16"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:53:16"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:54:16"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 11:55:24"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 11:55:24"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 11:55:24"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:55:24"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:56:24"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:57:24"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:58:24"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 11:59:24"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:00:24"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:01:18"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:01:18"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:01:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:01:19"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:02:18"}
+{"level":"info","message":"Email sent to bikramdhami334@gmail.com: <2e40e11b-6db9-50f1-e997-eec3a6defd94@busbooking.com>","service":"bus-booking-api","timestamp":"2026-04-27 12:02:43"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:03:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:04:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:05:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:06:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:07:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:08:18"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:09:18"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:10:04"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:10:04"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:10:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:10:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:11:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:12:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:13:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:14:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:15:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:16:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:17:04"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:18:04"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:18:37"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:18:37"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:18:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:18:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:19:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:20:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:21:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:22:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:23:37"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:24:37"}
+{"ip":"::1","level":"error","message":"Booking.findAll is not a function","method":"GET","service":"bus-booking-api","stack":"TypeError: Booking.findAll is not a function\n    at getAllBookings (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/bookingController.js:217:51)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at authenticate (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/middleware/auth.js:31:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-27 12:24:42","url":"/api/bookings/all?page=1&limit=10&search=","userId":2}
+{"ip":"::1","level":"error","message":"Booking.findAll is not a function","method":"GET","service":"bus-booking-api","stack":"TypeError: Booking.findAll is not a function\n    at getAllBookings (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/bookingController.js:217:51)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at authenticate (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/middleware/auth.js:31:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-27 12:24:46","url":"/api/bookings/all?page=1&limit=10&search=","userId":2}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:25:37"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:25:46"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:25:46"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:25:46"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:25:46"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:26:46"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:27:09"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:27:09"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:27:09"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:27:09"}
+{"ip":"::1","level":"error","message":"Unknown column 'u.name' in 'field list'","method":"GET","service":"bus-booking-api","stack":"Error: Unknown column 'u.name' in 'field list'\n    at Booking.findAll (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Booking.js:138:35)\n    at getAllBookings (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/bookingController.js:217:51)\n    at Layer.handleRequest (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\layer.js:152:17)\n    at next (D:\\backupfile\\setihimalayan_2.0\\bus-booking-backend\\node_modules\\router\\lib\\route.js:157:13)\n    at authenticate (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/middleware/auth.js:31:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-27 12:27:13","url":"/api/bookings/all?page=1&limit=10&search=","userId":2}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:28:09"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:29:09"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:29:45"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:29:45"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:29:45"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:29:45"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-27 12:29:47"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-27 12:29:47"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-27 12:29:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:29:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:30:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:31:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:32:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:33:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:34:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:35:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:36:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:37:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:38:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:39:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:40:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:41:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:42:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:43:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:44:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:45:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:46:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:47:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:48:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:49:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:50:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:51:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:52:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:53:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:54:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:55:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:56:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:57:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:58:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 12:59:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:00:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:01:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:02:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:03:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:04:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:05:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:06:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:07:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:08:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:09:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:10:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:11:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:12:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:13:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:14:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:15:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:16:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:17:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:18:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:19:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:20:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:21:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:22:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:23:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:24:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:25:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:26:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:27:47"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:28:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:29:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:30:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:31:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:32:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:33:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:34:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:35:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:36:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:37:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:38:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:39:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:40:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:41:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:42:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:43:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:44:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:45:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:46:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:47:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:48:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:49:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:50:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:51:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:52:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:53:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:54:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:55:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:56:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:57:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:58:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 13:59:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:00:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:01:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:02:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:03:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:04:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:05:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:06:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:07:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:08:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:09:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:10:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:11:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:12:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:13:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:14:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:15:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:16:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:17:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:18:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:19:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:20:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:21:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:22:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:23:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:24:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:25:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:26:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:27:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:28:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:29:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:30:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:31:48"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:32:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:33:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:34:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:35:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:36:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:37:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:38:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:39:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:40:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:41:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:42:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:43:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:44:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:45:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:46:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:47:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 14:48:49"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:03:41"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:04:41"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:05:41"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:06:41"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:07:41"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:08:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:09:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:10:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:11:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:12:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:13:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:14:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:15:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:16:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:17:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:18:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:19:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:20:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:21:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:22:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:23:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:24:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:25:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:26:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:27:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:28:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:29:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:30:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:31:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:32:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:33:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:34:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:35:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:36:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:37:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:38:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:39:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:40:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:41:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:42:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:43:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:44:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:45:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:46:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:47:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:48:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:49:42"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:50:45"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:51:43"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:52:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:53:43"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:54:45"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:55:45"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:56:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:57:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:58:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 15:59:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:00:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:01:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:02:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:03:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:04:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:05:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:06:44"}
+{"level":"debug","message":"Expired locks cleanup executed","service":"bus-booking-api","timestamp":"2026-04-27 16:07:44"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 11:37:14"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 11:37:14"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 11:37:14"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:37:18"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:38:14"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:39:14"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:40:14"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:41:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:42:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:43:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:44:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:45:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:46:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:47:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:48:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:49:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:50:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:51:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:52:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:53:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:54:15"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:55:15"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 11:57:27"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 11:57:27"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 11:57:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:57:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:58:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 11:59:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:00:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:01:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:02:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:03:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:04:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:05:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:06:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:07:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:08:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:09:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:10:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:11:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:12:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:13:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:14:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:15:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:16:27"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:17:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:18:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:19:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:20:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:21:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:22:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:23:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:24:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:25:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:26:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:27:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:28:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:29:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:30:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:31:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:32:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:33:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:34:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:35:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:36:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:37:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:38:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:39:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:40:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:41:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:42:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:43:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:44:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:45:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:46:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:47:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:48:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:49:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:50:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:51:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:52:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:53:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:54:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:55:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:56:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:57:28"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 12:58:29"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 12:58:29"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 12:58:29"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:58:30"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 12:58:48"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 12:58:48"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 12:58:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:58:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 12:59:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:00:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:01:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:02:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:03:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:04:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:05:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:06:48"}
+{"ip":"::1","level":"error","message":"Column count doesn't match value count at row 1","method":"POST","service":"bus-booking-api","stack":"Error: Column count doesn't match value count at row 1\n    at Bus.create (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:15:37)\n    at createBus (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:10:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-28 13:07:35","url":"/api/buses","userId":2}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:07:48"}
+{"ip":"::1","level":"error","message":"Column count doesn't match value count at row 1","method":"POST","service":"bus-booking-api","stack":"Error: Column count doesn't match value count at row 1\n    at Bus.create (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:15:37)\n    at createBus (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:10:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-28 13:08:07","url":"/api/buses","userId":2}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:08:48"}
+{"ip":"::1","level":"error","message":"Column count doesn't match value count at row 1","method":"POST","service":"bus-booking-api","stack":"Error: Column count doesn't match value count at row 1\n    at Bus.create (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:15:37)\n    at createBus (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:10:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-28 13:09:09","url":"/api/buses","userId":2}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:09:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:10:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:11:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:12:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:13:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:14:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:15:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:16:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:17:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:18:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:19:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:20:48"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:21:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:22:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:23:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:24:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:25:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:26:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:27:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:28:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:29:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:30:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:31:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:32:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:33:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:34:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:35:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:36:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:37:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:38:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:39:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:40:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:41:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:42:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:43:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:44:49"}
+{"ip":"::1","level":"error","message":"Column count doesn't match value count at row 1","method":"POST","service":"bus-booking-api","stack":"Error: Column count doesn't match value count at row 1\n    at Bus.create (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/models/Bus.js:15:37)\n    at createBus (file:///D:/backupfile/setihimalayan_2.0/bus-booking-backend/controllers/busController.js:10:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)","timestamp":"2026-04-28 13:45:00","url":"/api/buses","userId":2}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:45:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:46:49"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:47:49"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 13:48:46"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 13:48:46"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 13:48:46"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:48:47"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 13:49:18"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 13:49:18"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 13:49:18"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:49:18"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:50:18"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:51:18"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 13:51:28"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 13:51:28"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 13:51:28"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:51:28"}
+{"level":"info","message":"🚀 Server running on port 5000","service":"bus-booking-api","timestamp":"2026-04-28 13:52:03"}
+{"level":"info","message":"📡 Socket.IO ready","service":"bus-booking-api","timestamp":"2026-04-28 13:52:03"}
+{"level":"info","message":"Cleanup job started (interval: 60 seconds)","service":"bus-booking-api","timestamp":"2026-04-28 13:52:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:52:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:53:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:54:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:55:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:56:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:57:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:58:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 13:59:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:00:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:01:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:02:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:03:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:04:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:05:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:06:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:07:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:08:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:09:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:10:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:11:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:12:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:13:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:14:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:15:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:16:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:17:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:18:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:19:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:20:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:21:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:22:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:23:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:24:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:25:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:26:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:27:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:28:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:29:03"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:30:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:31:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:32:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:33:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:34:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:35:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:36:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:37:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:38:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:39:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:40:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:41:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:42:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:43:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:44:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:45:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:46:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:47:04"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-04-28 14:48:04"}

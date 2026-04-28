@@ -132,6 +132,46 @@ class Booking {
             [id]
         );
     }
+  static async findAll({ page = 1, limit = 10, search = '' }) {
+    const offset = (page - 1) * limit;
+    const searchQuery = `%${search}%`;
+
+    const [rows] = await pool.execute(
+        `SELECT b.id, b.booking_reference, b.total_amount, b.status, b.created_at,
+                b.confirmed_at, s.departure_time, r.origin, r.destination,
+                bus.bus_number, bus.bus_type, u.full_name AS user_name
+         FROM bookings b
+         JOIN schedules s ON s.id = b.schedule_id
+         JOIN routes r ON r.id = s.route_id
+         JOIN buses bus ON bus.id = s.bus_id
+         JOIN users u ON u.id = b.user_id
+         WHERE (b.booking_reference LIKE ? 
+                OR u.full_name LIKE ? 
+                OR r.origin LIKE ? 
+                OR r.destination LIKE ?)
+         AND b.deleted_at IS NULL
+         ORDER BY b.created_at DESC
+         LIMIT ? OFFSET ?`,
+        [searchQuery, searchQuery, searchQuery, searchQuery, limit, offset]
+    );
+
+    const [[{ total }]] = await pool.execute(
+        `SELECT COUNT(*) AS total
+         FROM bookings b
+         JOIN schedules s ON s.id = b.schedule_id
+         JOIN routes r ON r.id = s.route_id
+         JOIN buses bus ON bus.id = s.bus_id
+         JOIN users u ON u.id = b.user_id
+         WHERE (b.booking_reference LIKE ? 
+                OR u.full_name LIKE ? 
+                OR r.origin LIKE ? 
+                OR r.destination LIKE ?)
+         AND b.deleted_at IS NULL`,
+        [searchQuery, searchQuery, searchQuery, searchQuery]
+    );
+
+    return { bookings: rows, total };
+}
 }
 
 export default Booking;

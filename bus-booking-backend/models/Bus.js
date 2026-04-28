@@ -1,26 +1,33 @@
 import pool from '../config/database.js';
 
 class Bus {
+    static normalizeStatus(status) {
+        return status === 'inactive' ? 'retired' : status;
+    }
+
     static async create(busData) {
         const {
             bus_number, registration_number, total_seats, seat_layout, amenities,
-            bus_type, manufacturer, model, year, color, license_plate,
+            bus_type, status = 'active', manufacturer, model, year, color, license_plate,
             insurance_expiry, fitness_expiry, notes
         } = busData;
 
+
         const [result] = await pool.execute(
-            `INSERT INTO buses (
+              `INSERT INTO buses (
                 bus_number, registration_number, total_seats, seat_layout, amenities,
-                bus_type, manufacturer, model, year, color, license_plate,
+                bus_type, status, manufacturer, model, year, color, license_plate,
                 insurance_expiry, fitness_expiry, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
                 bus_number, registration_number, total_seats,
-                JSON.stringify(seat_layout), amenities ? JSON.stringify(amenities) : null,
-                bus_type, manufacturer, model, year, color, license_plate,
+                JSON.stringify(seat_layout),
+                amenities ? JSON.stringify(amenities) : null,
+                bus_type, Bus.normalizeStatus(status),
+                manufacturer, model, year, color, license_plate,
                 insurance_expiry, fitness_expiry, notes
-            ]
-        );
+              ]
+            );
         return result.insertId;
     }
 
@@ -88,6 +95,8 @@ class Bus {
                 fields.push(`${key} = ?`);
                 if (key === 'seat_layout' || key === 'amenities') {
                     values.push(JSON.stringify(value));
+                } else if (key === 'status') {
+                    values.push(Bus.normalizeStatus(value));
                 } else {
                     values.push(value);
                 }
@@ -103,7 +112,7 @@ class Bus {
     static async updateStatus(id, status) {
         await pool.execute(
             'UPDATE buses SET status = ?, updated_at = NOW() WHERE id = ?',
-            [status, id]
+            [Bus.normalizeStatus(status), id]
         );
     }
 

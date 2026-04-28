@@ -4,9 +4,9 @@ import { AuthContext } from "../context/AuthContext";
 import { View, ActivityIndicator } from "react-native";
 
 export default function Index() {
-  const { user, loading } = useContext(AuthContext);
+  const { user, isLoading } = useContext(AuthContext);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
         <ActivityIndicator size="large" color="#1d3557" />

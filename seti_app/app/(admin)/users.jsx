@@ -23,7 +23,7 @@ export default function AdminUsers() {
     fetchUsers();
   }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = async(id) => {
     Alert.alert("Delete User", "Are you sure you want to remove this user?", [
       { text: "Cancel" },
       { text: "Delete", style: "destructive", onPress: async () => {
@@ -52,8 +52,10 @@ export default function AdminUsers() {
         <Text className="text-[#1e3a8a] font-black text-base">{item.full_name}</Text>
         <Text className="text-gray-400 text-xs font-medium">{item.email}</Text>
         <View className="flex-row items-center mt-2">
-           <View className={`px-2 py-0.5 rounded-md ${item.role === 'admin' ? 'bg-orange-100' : 'bg-blue-100'}`}>
-              <Text className={`text-[8px] font-black uppercase ${item.role === 'admin' ? 'text-orange-600' : 'text-blue-600'}`}>{item.role}</Text>
+           <View className={`px-2 py-0.5 rounded-md ${item.role === 'super_admin' ? 'bg-emerald-100' : item.role === 'admin' ? 'bg-orange-100' : 'bg-blue-100'}`}>
+              <Text className={`text-[8px] font-black uppercase ${item.role === 'super_admin' ? 'text-emerald-700' : item.role === 'admin' ? 'text-orange-600' : 'text-blue-600'}`}>
+                {item.role}
+              </Text>
            </View>
            {item.phone && (
              <>
@@ -64,7 +66,7 @@ export default function AdminUsers() {
         </View>
       </View>
       {item.role !== 'admin' && (
-        <TouchableOpacity onPress={() => handleDelete(item._id)} className="p-2">
+        <TouchableOpacity onPress={() => handleDelete(item.id)} className="p-2">
           <Ionicons name="trash-outline" size={20} color="#ef4444" />
         </TouchableOpacity>
       )}
@@ -96,7 +98,7 @@ export default function AdminUsers() {
           <FlatList
             data={filteredUsers}
             renderItem={renderItem}
-            keyExtractor={item => item._id}
+            keyExtractor={item => item.id?.toString() ?? item._id?.toString()}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={<Text className="text-gray-400 text-center mt-10">No users found</Text>}
           />

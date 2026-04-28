@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }) => {
         const storedUser = await getStoredUser();
         const token = await getAccessToken();
         setItem('token', token); // Store token in AsyncStorage for API calls if needed
+        setAccessToken(token); // Set token in memory for API client
         if (storedUser && token) {
           setUser(storedUser);
           setIsAuthenticated(true);
@@ -157,6 +158,7 @@ export const AuthProvider = ({ children }) => {
         user,
         isAuthenticated,
         isLoading,
+        loading: isLoading,
         error,
         login,
         register,

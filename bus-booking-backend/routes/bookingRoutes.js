@@ -24,6 +24,6 @@ router.get('/my-bookings', getUserBookings);
 router.get('/reference/:reference', getBookingDetails);
 router.post('/:reference/cancel', validate(cancelBookingSchema), simpleAudit('CANCEL', 'booking'), cancelBooking);
 router.get('/:reference/ticket', downloadTicket);
-router.get("/bookings",    authenticate, getAllBookings); // Admin route to get all bookings with pagination and search
+router.get("/all",    authenticate, getAllBookings); // Admin route to get all bookings with pagination and search
 
 export default router;

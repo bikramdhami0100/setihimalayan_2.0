@@ -13,6 +13,7 @@ export const uploadProfileImage = (formData) => api.post('/auth/upload-profile-i
   headers: { 'Content-Type': 'multipart/form-data' },
 });
 export const getUsers = () => api.get('/users');
+export const updateUserRole = (id, role) => api.put(`/users/${id}/role`, { role });
 export const deleteUser = (id) => api.delete(`/users/${id}`);
 // reset password api calls
 export const resetPassword = (email) => api.post('/auth/reset-password', { email });

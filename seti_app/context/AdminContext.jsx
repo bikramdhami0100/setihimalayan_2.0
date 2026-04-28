@@ -5,6 +5,7 @@ import * as routeApi from '../api/routes';
 import * as scheduleApi from '../api/schedules';
 import * as reportApi from '../api/reports';
 import { getProfile } from '../api/auth'; // For user data if needed or a dedicated user API
+import { getAccessToken } from '../utils/storage';
 
 const AdminContext = createContext();
 
@@ -55,7 +56,7 @@ export function AdminProvider({ children }) {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
       const res = await busApi.getBuses({ page: page + 1, limit, search });
-      console.log(res,"buses")
+      // // console.log(res,"buses")
       setBuses(res.data.data.buses || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0 });
     } finally {
@@ -70,12 +71,12 @@ export function AdminProvider({ children }) {
     try {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
-      // get token from async/storage or native storage depending on your auth implementation
-      const data = await getProfile(); // Assuming this returns an object with the token, adjust as needed
-      // Include the token in the request headers if your API requires it for authentication
-      // console.log(tokens.data.refresh_token_hash,"ok")
-      let tokens = data.data.refresh_token_hash; // Adjust based on actual response structure
-      const res = await bookingApi.getAllBookings(tokens,{ page: page + 1, limit, search });
+      // get from async storage or native storage if not available in memory, this is just a placeholder
+      // const tokens = await AsyncStorage.getItem('refresh_token_hash'); // Example for React Native
+      // getAccessToken() // Example for native storage utility function
+      let tokensValue = await getAccessToken(); // Fallback to async storage if not in memory
+      // // console.log(tokensValue,"token value")
+      const res = await bookingApi.getAllBookings(tokensValue,{ page: page + 1, limit, search });
       setBookings(res.data.data.bookings || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0 });
     } finally {

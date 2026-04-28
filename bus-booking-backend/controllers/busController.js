@@ -65,7 +65,7 @@ export const updateBus = async (req, res, next) => {
 export const updateBusStatus = async (req, res, next) => {
     try {
         const { status } = req.body;
-        if (!['active', 'maintenance', 'retired'].includes(status)) {
+        if (!['active', 'maintenance', 'retired', 'inactive'].includes(status)) {
             return errorResponse(res, 'Invalid status', 400);
         }
         await Bus.updateStatus(req.params.id, status);

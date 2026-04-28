@@ -77,6 +77,7 @@ export default function AdminLayout() {
     <Drawer
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
+         drawerStyle:{flex:1},
         headerShown: true,
         headerStyle: {
           backgroundColor: 'white',
@@ -115,6 +116,8 @@ export default function AdminLayout() {
       />
       <Drawer.Screen
         name="buses"
+      
+        // className="bg-red-500"
         options={{
           drawerLabel: "Manage Buses",
           title: "Buses",
@@ -153,6 +156,16 @@ export default function AdminLayout() {
           drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />,
         }}
       />
+      {user?.role === 'super_admin' && (
+        <Drawer.Screen
+          name="roles"
+          options={{
+            drawerLabel: "Role Management",
+            title: "Roles",
+            drawerIcon: ({ color }) => <Ionicons name="shield-checkmark-outline" size={22} color={color} />,
+          }}
+        />
+      )}
       <Drawer.Screen
         name="reports"
         options={{

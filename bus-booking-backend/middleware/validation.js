@@ -31,6 +31,10 @@ export const loginSchema = Joi.object({
     password: Joi.string().required()
 });
 
+export const roleUpdateSchema = Joi.object({
+    role: Joi.string().valid('passenger', 'admin', 'super_admin').required()
+});
+
 export const changePasswordSchema = Joi.object({
     email: Joi.string().email().required(),
     newPassword: Joi.string().min(6).required(),
@@ -55,6 +59,7 @@ export const busSchema = Joi.object({
     seat_layout: Joi.object().required(),
     amenities: Joi.array().items(Joi.string()).optional(),
     bus_type: Joi.string().valid('Standard', 'Luxury', 'Sleeper', 'Mini').default('Standard'),
+    status: Joi.string().valid('active', 'maintenance', 'retired', 'inactive').default('active'),
     manufacturer: Joi.string().optional(),
     model: Joi.string().optional(),
     year: Joi.number().integer().min(1990).max(new Date().getFullYear()).optional(),
@@ -72,7 +77,7 @@ export const busUpdateSchema = Joi.object({
     seat_layout: Joi.object().optional(),
     amenities: Joi.array().items(Joi.string()).optional(),
     bus_type: Joi.string().valid('Standard', 'Luxury', 'Sleeper', 'Mini').optional(),
-    status: Joi.string().valid('active', 'maintenance', 'retired').optional(),
+    status: Joi.string().valid('active', 'maintenance', 'retired', 'inactive').optional(),
     manufacturer: Joi.string().optional(),
     model: Joi.string().optional(),
     year: Joi.number().integer().min(1990).max(new Date().getFullYear()).optional(),

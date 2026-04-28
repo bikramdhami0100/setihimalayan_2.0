@@ -63,6 +63,13 @@ class User {
         );
     }
 
+    static async updateRole(userId, role) {
+        await pool.execute(
+            'UPDATE users SET role = ?, updated_at = NOW() WHERE id = ?',
+            [role, userId]
+        );
+    }
+
     static async updateLastLogin(userId) {
         await pool.execute(
             'UPDATE users SET last_login_at = NOW() WHERE id = ?',

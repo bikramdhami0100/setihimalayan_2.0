@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput } from "react-native";
+import { View, Text, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator, Alert, Modal, TextInput, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getRoutes, createRoute, deleteRoute, toggleRouteActive } from "../../api/routes";
 
@@ -113,61 +113,68 @@ export default function AdminRoutes() {
 
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-white p-8 rounded-t-[40px] shadow-2xl">
+          <View className="bg-white p-8 rounded-t-[40px] shadow-2xl max-h-[90%]">
             <View className="w-12 h-1.5 bg-gray-100 rounded-full self-center mb-6" />
             <Text className="text-xl font-black text-[#1e3a8a] mb-6">Create New Route</Text>
             
-            <View className="flex-row gap-4 mb-4">
-              <View className="flex-1">
-                <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Origin</Text>
-                <TextInput 
-                  placeholder="Kathmandu"
-                  className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
-                  value={newRoute.origin}
-                  onChangeText={t => setNewRoute({...newRoute, origin: t})}
-                />
+            <ScrollView
+              style={{ flexGrow: 1 }}
+              contentContainerStyle={{ paddingBottom: 30 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View className="flex-row gap-4 mb-4">
+                <View className="flex-1">
+                  <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Origin</Text>
+                  <TextInput 
+                    placeholder="Kathmandu"
+                    className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
+                    value={newRoute.origin}
+                    onChangeText={t => setNewRoute({...newRoute, origin: t})}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Destination</Text>
+                  <TextInput 
+                    placeholder="Pokhara"
+                    className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
+                    value={newRoute.destination}
+                    onChangeText={t => setNewRoute({...newRoute, destination: t})}
+                  />
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Destination</Text>
-                <TextInput 
-                  placeholder="Pokhara"
-                  className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
-                  value={newRoute.destination}
-                  onChangeText={t => setNewRoute({...newRoute, destination: t})}
-                />
-              </View>
-            </View>
 
-            <View className="flex-row gap-4 mb-8">
-              <View className="flex-1">
-                <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Distance (KM)</Text>
-                <TextInput 
-                  placeholder="200"
-                  keyboardType="numeric"
-                  className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
-                  value={newRoute.distance}
-                  onChangeText={t => setNewRoute({...newRoute, distance: t})}
-                />
+              <View className="flex-row gap-4 mb-8">
+                <View className="flex-1">
+                  <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Distance (KM)</Text>
+                  <TextInput 
+                    placeholder="200"
+                    keyboardType="numeric"
+                    className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
+                    value={newRoute.distance}
+                    onChangeText={t => setNewRoute({...newRoute, distance: t})}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Duration</Text>
+                  <TextInput 
+                    placeholder="7h 30m"
+                    className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
+                    value={newRoute.duration}
+                    onChangeText={t => setNewRoute({...newRoute, duration: t})}
+                  />
+                </View>
               </View>
-              <View className="flex-1">
-                <Text className="text-gray-400 text-[10px] font-bold uppercase mb-2 ml-1">Duration</Text>
-                <TextInput 
-                  placeholder="7h 30m"
-                  className="bg-gray-50 p-4 rounded-2xl border border-gray-100 font-semibold"
-                  value={newRoute.duration}
-                  onChangeText={t => setNewRoute({...newRoute, duration: t})}
-                />
-              </View>
-            </View>
 
-            <View className="flex-row gap-4">
-              <TouchableOpacity onPress={() => setModalVisible(false)} className="flex-1 p-5 rounded-2xl bg-gray-100 items-center">
-                <Text className="text-gray-500 font-black">Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleAddRoute} className="flex-1 p-5 rounded-2xl bg-[#1e3a8a] items-center shadow-lg shadow-blue-200">
-                <Text className="text-white font-black">Create Route</Text>
-              </TouchableOpacity>
-            </View>
+              <View className="flex-row gap-4">
+                <TouchableOpacity onPress={() => setModalVisible(false)} className="flex-1 p-5 rounded-2xl bg-gray-100 items-center">
+                  <Text className="text-gray-500 font-black">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleAddRoute} className="flex-1 p-5 rounded-2xl bg-[#1e3a8a] items-center shadow-lg shadow-blue-200">
+                  <Text className="text-white font-black">Create Route</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
