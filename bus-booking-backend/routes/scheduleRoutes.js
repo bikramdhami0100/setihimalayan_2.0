@@ -6,7 +6,8 @@ import {
     getScheduleById,
     updateSchedule,
     cancelSchedule,
-    getSeatLayout
+    getSeatLayout,
+    deleteSchedule
 } from '../controllers/scheduleController.js';
 import { authenticate } from '../middleware/auth.js';
 import { isAdmin } from '../middleware/roleCheck.js';
@@ -26,5 +27,7 @@ router.get('/:id/seats', apiLimiter, getSeatLayout);
 router.post('/', authenticate, isAdmin, validate(scheduleSchema), simpleAudit('CREATE', 'schedule'), createSchedule);
 router.put('/:id', authenticate, isAdmin, validate(scheduleUpdateSchema), simpleAudit('UPDATE', 'schedule'), updateSchedule);
 router.post('/:id/cancel', authenticate, isAdmin, simpleAudit('CANCEL', 'schedule'), cancelSchedule);
+// delete route is not implemented in controller, so commenting out for now add now
+router.delete('/:id', authenticate, isAdmin, simpleAudit('DELETE', 'schedule'), deleteSchedule);
 
 export default router;

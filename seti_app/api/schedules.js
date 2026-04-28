@@ -8,4 +8,5 @@ export const getScheduleById = (id) => api.get(`/schedules/${id}`);
 export const getSeatLayout = (id) => api.get(`/schedules/${id}/seats`);
 export const createSchedule = (data) => api.post('/schedules', data);
 export const updateSchedule = (id, data) => api.put(`/schedules/${id}`, data);
+export const deleteSchedule = (id) => api.delete(`/schedules/${id}`);
 export const cancelSchedule = (id, reason) => api.post(`/schedules/${id}/cancel`, { cancellation_reason: reason });

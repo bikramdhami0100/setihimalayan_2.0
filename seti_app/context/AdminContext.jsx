@@ -109,17 +109,40 @@ export function AdminProvider({ children }) {
       setKeyLoading(key, false);
     }
   }, []);
+  // Inside AdminProvider, after fetchRoutes definition:
+const fetchSchedules = useCallback(async (isRefreshing = false) => {
+  const key = 'schedules';
+  isRefreshing ? setKeyRefreshing(key, true) : setKeyLoading(key, true);
+  try {
+    const { page, limit } = getPagination(key);
+    const search = getSearchQuery(key);
+    const res = await scheduleApi.getSchedules({ page: page + 1, limit, search });
+    setSchedules(res.data.data.schedules || []);
+    updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+  } finally {
+    setKeyLoading(key, false);
+    setKeyRefreshing(key, false);
+  }
+}, [paginations.schedules, searchQueries.schedules]);
     //   Initial data fetch can be triggered here  i.e. fetchDashboard() or fetchBuses() etc. or can be triggered in respective screens
  useEffect(() => {
     fetchDashboard();
     fetchBuses();
     fetchBookings();
     fetchRoutes();
+    fetchSchedules();
   } , []);
   // ── Combined Context Object
   const value = {
     // Data
-    buses, bookings, routes, schedules, reports, dashboard, users,
+    buses, 
+    bookings,
+     routes, 
+     schedules,
+      reports, 
+      dashboard, 
+      users,
+       fetchSchedules, 
     // Status
     loading, refreshing,
     // Search & Pagination

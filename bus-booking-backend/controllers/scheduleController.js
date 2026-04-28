@@ -127,3 +127,15 @@ export const getSeatLayout = async (req, res, next) => {
         next(err);
     }
 };
+
+// deleteSchedule is not implemented in controller, so commenting out for now add now
+export const deleteSchedule = async (req, res, next) => {
+    try {
+        const schedule = await Schedule.findById(req.params.id);
+        if (!schedule) return errorResponse(res, 'Schedule not found', 404);
+        await Schedule.delete(req.params.id);
+        successResponse(res, 'Schedule deleted');
+    } catch (err) {
+        next(err);
+    }
+};

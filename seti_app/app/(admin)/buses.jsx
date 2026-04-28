@@ -2,7 +2,7 @@
  * AdminBuses.jsx  –  Fleet Manager (NativeWind / Tailwind CSS)
  *
  * Install once:
- *   npx expo install nativewind tailwindcss expo-print expo-sharing expo-file-system
+ *   npx expo install nativewind tailwindcss expo-print expo-sharing expo-file-system react-native-calendars
  *
  * tailwind.config.js  →  content: ["./app/**\/*.{js,jsx,ts,tsx}"]
  * babel.config.js     →  plugins: ["nativewind/babel"]
@@ -16,6 +16,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Modal, TextInput, Searchbar } from "react-native-paper";
+import { Calendar } from "react-native-calendars";   // ✅ for date fields
 import * as Print      from "expo-print";
 import * as Sharing    from "expo-sharing";
 import * as FileSystem from "expo-file-system";
@@ -74,8 +75,8 @@ const itemToForm = (item) => {
     model:               item.model                ?? "",
     year:                item.year ? String(item.year) : "",
     color:               item.color                ?? "",
-    insurance_expiry:    item.insurance_expiry      ?? "",
-    fitness_expiry:      item.fitness_expiry        ?? "",
+    insurance_expiry:    item.insurance_expiry ? item.insurance_expiry.split("T")[0] : "",
+    fitness_expiry:      item.fitness_expiry   ? item.fitness_expiry.split("T")[0]   : "",
     notes:               item.notes                ?? "",
   };
 };
@@ -236,12 +237,56 @@ const Field = ({ style, ...props }) => (
   />
 );
 
+/** NEW: Date picker using react-native-calendars for date-only fields */
+const DatePicker = ({ label, value, onChange, minDate }) => {
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const handleDateSelect = (day) => {
+    onChange(day.dateString);   // "YYYY-MM-DD"
+    setShowCalendar(false);
+  };
+
+  const marked = value ? { [value]: { selected: true, selectedColor: '#1e3a8a' } } : {};
+
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setShowCalendar(true)}
+        className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3 flex-row items-center justify-between"
+      >
+        <Text className="text-sm font-bold text-slate-500">
+          {value ? value : `Select ${label}`}
+        </Text>
+        <Ionicons name="calendar-outline" size={18} color="#64748b" />
+      </TouchableOpacity>
+
+      <Portal>
+        <Modal
+          visible={showCalendar}
+          onDismiss={() => setShowCalendar(false)}
+          contentContainerStyle={{ backgroundColor: "#fff", margin: 20, borderRadius: 20, padding: 16 }}
+        >
+          <Calendar
+            onDayPress={handleDateSelect}
+            markedDates={marked}
+            minDate={minDate}
+            theme={{
+              selectedDayBackgroundColor: '#1e3a8a',
+              arrowColor: '#1e3a8a',
+              todayTextColor: '#1e3a8a',
+            }}
+          />
+        </Modal>
+      </Portal>
+    </>
+  );
+};
+
 /** Pill option row (Bus Type / Status) */
 const PillRow = ({ options, value, onChange }) => (
   <View className="flex-row flex-wrap gap-2 mb-2">
     {options.map((opt) => {
       const on = value === opt;
-      // Status colour mapping — full static strings for Tailwind scanner
       const activeBg =
         opt === "active"      ? "bg-green-600 border-green-600"
         : opt === "inactive"    ? "bg-red-600 border-red-600"
@@ -375,31 +420,24 @@ const BusCard = React.memo(({ item, index, onEdit, onDelete, onView, isDeleting 
             <Ionicons name="pencil-outline" size={13} color="#475569" />
             <Text className="text-xs font-extrabold text-slate-600">Edit</Text>
           </TouchableOpacity>
-          {/* <TouchableOpacity
-            onPress={() => onDelete(item.id, item.bus_number)}
+          <TouchableOpacity
+            onPress={() => {
+              const id = item.id || item._id;
+              console.log("Delete button pressed — bus:", item.bus_number, "ID:", id);
+              onDelete(id, item.bus_number);
+            }}
             className="flex-row items-center gap-1 bg-red-50 px-4 py-2 rounded-xl"
           >
             <Ionicons name="trash-outline" size={13} color="#ef4444" />
             <Text className="text-xs font-extrabold text-red-500">Delete</Text>
-          </TouchableOpacity> */}
-          <TouchableOpacity
-  onPress={() => {
-    const id = item.id || item._id;
-    console.log("Delete button pressed — bus:", item.bus_number, "ID:", id);
-    onDelete(id, item.bus_number);
-  }}
-  className="flex-row items-center gap-1 bg-red-50 px-4 py-2 rounded-xl"
->
-  <Ionicons name="trash-outline" size={13} color="#ef4444" />
-  <Text className="text-xs font-extrabold text-red-500">Delete</Text>
-</TouchableOpacity>
+          </TouchableOpacity>
         </View>
       </View>
     </Animated.View>
   );
 });
 
-// ─── Create / Edit form modal ─────────────────────────────────────────────────
+// ─── Create / Edit form modal (with DatePicker for expiry fields) ───────────
 const BusForm = ({ visible, editingBus, form, setForm, saving, onSave, onClose }) => (
   <Portal>
     <Modal
@@ -480,10 +518,19 @@ const BusForm = ({ visible, editingBus, form, setForm, saving, onSave, onClose }
             <View className="flex-1"><Field label="Color" value={form.color} onChangeText={(t) => setForm({ ...form, color: t })} /></View>
           </View>
 
-          {/* Compliance */}
+          {/* Compliance – NOW USING DatePicker */}
           <SectionLabel>Compliance &amp; Expiry</SectionLabel>
-          <Field label="Insurance Expiry (YYYY-MM-DD)" value={form.insurance_expiry} onChangeText={(t) => setForm({ ...form, insurance_expiry: t })} />
-          <Field label="Fitness Expiry (YYYY-MM-DD)"   value={form.fitness_expiry}   onChangeText={(t) => setForm({ ...form, fitness_expiry: t })} />
+          <DatePicker
+            label="Insurance Expiry"
+            value={form.insurance_expiry}
+            onChange={(date) => setForm({ ...form, insurance_expiry: date })}
+          />
+          <DatePicker
+            label="Fitness Expiry"
+            value={form.fitness_expiry}
+            onChange={(date) => setForm({ ...form, fitness_expiry: date })}
+            minDate={form.insurance_expiry || undefined}
+          />
 
           {/* Notes */}
           <SectionLabel>Notes</SectionLabel>

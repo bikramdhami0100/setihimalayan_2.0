@@ -29,15 +29,49 @@ class Route {
         return rows[0];
     }
 
-    static async findAll(activeOnly = false) {
-        let query = 'SELECT * FROM routes WHERE deleted_at IS NULL';
-        if (activeOnly) {
-            query += ' AND is_active = 1';
-        }
-        query += ' ORDER BY origin, destination';
-        const [rows] = await pool.execute(query);
-        return rows;
+  static async findAll({ activeOnly = false, search = null, page, limit } = {}) {
+    let query = 'SELECT * FROM routes WHERE deleted_at IS NULL';
+    let countQuery = 'SELECT COUNT(*) as total FROM routes WHERE deleted_at IS NULL';
+
+    const values = [];
+    const countValues = [];
+
+    const addFilter = (condition, value) => {
+        query += ` AND ${condition}`;
+        countQuery += ` AND ${condition}`;
+        values.push(value);
+        countValues.push(value);
+    };
+
+    if (activeOnly) {
+        query += ' AND is_active = 1';
+        countQuery += ' AND is_active = 1';
     }
+
+    if (search) {
+        const term = `%${search}%`;
+        query += ' AND (origin LIKE ? OR destination LIKE ?)';
+        countQuery += ' AND (origin LIKE ? OR destination LIKE ?)';
+        values.push(term, term);
+        countValues.push(term, term);
+    }
+
+    query += ' ORDER BY origin, destination';
+
+    if (page !== undefined && limit !== undefined) {
+        const offset = (page - 1) * limit;
+        query += ' LIMIT ? OFFSET ?';
+        values.push(Number(limit), Number(offset));
+    }
+
+    const [rows] = await pool.execute(query, values);
+    const [countResult] = await pool.execute(countQuery, countValues);
+
+    return {
+        routes: rows,
+        total: countResult[0].total
+    };
+}
 
     static async search(origin, destination) {
         let query = 'SELECT * FROM routes WHERE deleted_at IS NULL';

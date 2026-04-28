@@ -11,11 +11,37 @@ export const createRoute = async (req, res, next) => {
     }
 };
 
+// export const getAllRoutes = async (req, res, next) => {
+//     try {
+//         const { active_only, limit, page, search } = req.query;
+//         // come http://localhost:5000/api/routes?limit=5&page=2&search=Kathmandu
+
+//         const routes = await Route.findAll(active_only === 'true', search, page ? parseInt(page) : undefined, limit ? parseInt(limit) : undefined);
+//         successResponse(res, 'Routes retrieved', { routes });
+//     } catch (err) {
+//         next(err);
+//     }
+// };
 export const getAllRoutes = async (req, res, next) => {
     try {
-        const { active_only } = req.query;
-        const routes = await Route.findAll(active_only === 'true');
-        successResponse(res, 'Routes retrieved', { routes });
+        const { active_only, limit, page, search } = req.query;
+
+        const result = await Route.findAll({
+            activeOnly: active_only === 'true',
+            search: search || null,
+            page: page ? parseInt(page, 10) : undefined,
+            limit: limit ? parseInt(limit, 10) : undefined
+        });
+
+        successResponse(res, 'Routes retrieved', { 
+            routes: result.routes,
+            pagination: {
+                page: page || 1,
+                limit: limit || result.routes.length,
+                total: result.total,
+                totalPages: limit ? Math.ceil(result.total / limit):1
+            }   
+     });
     } catch (err) {
         next(err);
     }
