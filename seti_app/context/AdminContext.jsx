@@ -58,7 +58,10 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
     const res = await usersApi.getUsers({ page: page + 1, limit, search });
     setUsers(res.data.data.users || []);
     updatePagination(key, { total: res.data.data.pagination?.total || 0 });
-  } finally {
+  } catch (err) {
+    console.error("Failed to fetch users", err);
+  }
+   finally {
     setKeyLoading(key, false);
     setKeyRefreshing(key, false);
   }
@@ -74,6 +77,8 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
       // // console.log(res,"buses")
       setBuses(res.data.data.buses || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+    }catch (err) {
+      console.error("Failed to fetch buses", err);
     } finally {
       setKeyLoading(key, false);
       setKeyRefreshing(key, false);
@@ -94,6 +99,8 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
       const res = await bookingApi.getAllBookings(tokensValue,{ page: page + 1, limit, search });
       setBookings(res.data.data.bookings || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+    } catch (err) {
+      console.error("Failed to fetch bookings", err); 
     } finally {
       setKeyLoading(key, false);
       setKeyRefreshing(key, false);
@@ -122,6 +129,8 @@ const fetchRoutes = useCallback(async (isRefreshing = false) => {
     try {
       const res = await reportApi.getUtilizationReport();
       setDashboard(res.data.data);
+    } catch (err) {
+      console.error("Failed to fetch dashboard data", err);
     } finally {
       setKeyLoading(key, false);
     }
@@ -136,6 +145,8 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
     const res = await scheduleApi.getSchedules({ page: page + 1, limit, search });
     setSchedules(res.data.data.schedules || []);
     updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+  } catch (err) {
+    console.error("Failed to fetch schedules", err);
   } finally {
     setKeyLoading(key, false);
     setKeyRefreshing(key, false);

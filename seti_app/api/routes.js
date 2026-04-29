@@ -8,3 +8,4 @@ export const updateRoute = (id, data) => api.put(`/routes/${id}`, data);
 export const toggleRouteActive = (id, isActive) => api.patch(`/routes/${id}/toggle`, { is_active: isActive });
 export const deleteRoute = (id) => api.delete(`/routes/${id}`);
 export const getRouteStats = () => api.get('/routes/stats');
+export const getPopularRoutes = () => api.get('/reports/popular-routes');

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useRef } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -9,64 +9,144 @@ import {
   Modal,
   StatusBar,
   ImageBackground,
-  Animated,
+  ActivityIndicator,
+  FlatList,
+  Keyboard,
+  Alert,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Calendar } from "react-native-calendars";
 import dayjs from "dayjs";
-import { AuthContext } from "../../context/AuthContext";
-import { Image } from "expo-image";
-import * as Haptics from "expo-haptics";
-
-const POPULAR_ROUTES = [
-  {
-    from: "Kathmandu",
-    to: "Pokhara",
-    duration: "7h",
-    price: "NPR 1,200",
-    tag: "Popular",
-    tagColor: "#38bdf8",
-    img: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?w=600&auto=format&fit=crop",
-  },
-  {
-    from: "Kathmandu",
-    to: "Chitwan",
-    duration: "5h",
-    price: "NPR 900",
-    tag: "Daily",
-    tagColor: "#34d399",
-    img: "https://images.unsplash.com/photo-1518791841217-8f162f1912da?w=600&auto=format&fit=crop",
-  },
-  {
-    from: "Pokhara",
-    to: "Lumbini",
-    duration: "6h",
-    price: "NPR 1,100",
-    tag: "Express",
-    tagColor: "#f97316",
-    img: "https://images.unsplash.com/photo-1625813986671-f4a9d66e1827?w=600&auto=format&fit=crop",
-  },
-];
+import { useCustomerData } from "../../context/CustomerContext";
 
 export default function HomeScreen() {
-  const { user } = useContext(AuthContext);
-  const [from, setFrom] = useState("Kathmandu");
-  const [to, setTo] = useState("Pokhara");
+  const {
+    routes,
+    popularRoutes,
+    loading,
+    fetchRoutes,
+    fetchPopularRoutes,
+    userProfile,
+  } = useCustomerData();
+
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [date, setDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [showCalendar, setShowCalendar] = useState(false);
-  const [activeField, setActiveField] = useState(null); // 'from' | 'to'
 
-  const displayName = user?.name?.split(" ")[0] || "Traveler";
+  const [fromSuggestions, setFromSuggestions] = useState([]);
+  const [toSuggestions, setToSuggestions] = useState([]);
+  const [showFromSuggestions, setShowFromSuggestions] = useState(false);
+  const [showToSuggestions, setShowToSuggestions] = useState(false);
+  const [activeField, setActiveField] = useState(null);
+
+  const blurTimeoutRef = useRef(null);
+
+  // Extract unique locations from routes data
+  const allLocations = useMemo(() => {
+    if (!routes || routes.length === 0) return [];
+    const locationsSet = new Set();
+    routes.forEach((route) => {
+      if (route.origin) locationsSet.add(route.origin);
+      if (route.destination) locationsSet.add(route.destination);
+    });
+    return Array.from(locationsSet).sort();
+  }, [routes]);
+
+  const filterSuggestions = useCallback(
+    (input) => {
+      if (!input || input.trim().length === 0) return [];
+      const lowerInput = input.toLowerCase();
+      return allLocations
+        .filter((loc) => loc.toLowerCase().includes(lowerInput))
+        .slice(0, 8);
+    },
+    [allLocations]
+  );
+
+  const handleFromChange = (text) => {
+    setFrom(text);
+    const suggestions = filterSuggestions(text);
+    setFromSuggestions(suggestions);
+    setShowFromSuggestions(suggestions.length > 0 && text.trim().length > 0);
+  };
+
+  const handleToChange = (text) => {
+    setTo(text);
+    const suggestions = filterSuggestions(text);
+    setToSuggestions(suggestions);
+    setShowToSuggestions(suggestions.length > 0 && text.trim().length > 0);
+  };
+
+  const selectFromSuggestion = (location) => {
+    clearBlurTimeout();
+    setFrom(location);
+    setFromSuggestions([]);
+    setShowFromSuggestions(false);
+    Keyboard.dismiss();
+  };
+
+  const selectToSuggestion = (location) => {
+    clearBlurTimeout();
+    setTo(location);
+    setToSuggestions([]);
+    setShowToSuggestions(false);
+    Keyboard.dismiss();
+  };
+
+  const clearBlurTimeout = () => {
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+  };
+
+  const handleFromBlur = () => {
+    blurTimeoutRef.current = setTimeout(() => {
+      setShowFromSuggestions(false);
+      setActiveField(null);
+    }, 300); // increased to allow tap on suggestion
+  };
+
+  const handleToBlur = () => {
+    blurTimeoutRef.current = setTimeout(() => {
+      setShowToSuggestions(false);
+      setActiveField(null);
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => clearBlurTimeout();
+  }, []);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        await Promise.all([fetchRoutes({ limit: 100 }), fetchPopularRoutes()]);
+      } catch (error) {
+        Alert.alert("Network Error", "Could not load routes. Please check your connection.");
+      }
+    };
+    loadData();
+  }, []);
 
   const handleSwap = () => {
-    setFrom(to);
-    setTo(from);
+    const tempFrom = from;
+    const tempTo = to;
+    setFrom(tempTo);
+    setTo(tempFrom);
+    setFromSuggestions([]);
+    setToSuggestions([]);
+    setShowFromSuggestions(false);
+    setShowToSuggestions(false);
   };
 
   const handleSearch = () => {
-    if (!from.trim() || !to.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (!from.trim() || !to.trim()) {
+      Alert.alert("Missing Information", "Please enter both origin and destination.");
+      return;
+    }
     router.push({
       pathname: "/(customer)/search-results/all",
       params: { origin: from.trim(), destination: to.trim(), date },
@@ -74,149 +154,234 @@ export default function HomeScreen() {
   };
 
   const handleRoutePress = (route) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setFrom(route.from);
-    setTo(route.to);
+    setFrom(route.origin);
+    setTo(route.destination);
     setDate(dayjs().format("YYYY-MM-DD"));
     router.push({
       pathname: "/(customer)/search-results/all",
-      params: { origin: route.from, destination: route.to, date: dayjs().format("YYYY-MM-DD") },
+      params: {
+        origin: route.origin,
+        destination: route.destination,
+        date: dayjs().format("YYYY-MM-DD"),
+      },
     });
   };
 
+  const displayName = userProfile?.full_name?.split(" ")[0] || "Traveler";
+  const totalRoutes = routes?.length || 0;
+  const dailyBuses = "200+";
+  const isLoadingPopular = loading.popularRoutes;
+  const isLoadingRoutes = loading.routes;
+
+  const renderSuggestionList = (suggestions, onSelect) => {
+    if (!suggestions.length) return null;
+    return (
+      <View
+        style={{
+          marginTop: 8,
+          backgroundColor: "#ffffff",
+          borderRadius: 16,
+          borderWidth: 1,
+          borderColor: "#e2e8f0",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 3,
+          maxHeight: 200,
+        }}
+      >
+        <FlatList
+          data={suggestions}
+          keyExtractor={(item, idx) => `${item}-${idx}`}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: "#f1f5f9",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+              }}
+              onPress={() => onSelect(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="location-outline" size={18} color="#38bdf8" />
+              <Text style={{ color: "#0f172a", fontSize: 14, fontWeight: "500" }}>{item}</Text>
+            </TouchableOpacity>
+          )}
+          showsVerticalScrollIndicator
+          keyboardShouldPersistTaps="always"
+        />
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#0f172a" }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
 
       <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
-        {/* ─── HERO HEADER ─── */}
-        <View style={{ backgroundColor: "#0f172a", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 }}>
-          {/* Top bar */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <View style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24, backgroundColor: "#ffffff" }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
             <View>
-              <Text style={{ color: "#94a3b8", fontSize: 12, fontWeight: "600", letterSpacing: 1.5, textTransform: "uppercase" }}>
+              <Text style={{ color: "#38bdf8", fontSize: 12, fontWeight: "700", letterSpacing: 1 }}>
                 SETI HIMALAYAN
               </Text>
-              <Text style={{ color: "#f1f5f9", fontSize: 22, fontWeight: "800", marginTop: 2 }}>
+              <Text style={{ color: "#0f172a", fontSize: 22, fontWeight: "800", marginTop: 2 }}>
                 Hello, {displayName} 👋
               </Text>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity
-                style={{ width: 40, height: 40, backgroundColor: "#1e293b", borderRadius: 12, alignItems: "center", justifyContent: "center" }}
-                onPress={() => router.push("/(customer)/profile")}
+                style={{ width: 40, height: 40, backgroundColor: "#f1f5f9", borderRadius: 12, alignItems: "center", justifyContent: "center" }}
+                onPress={() => router.push("/(customer)/notifications")}
               >
-                <Ionicons name="notifications-outline" size={20} color="#94a3b8" />
+                <Ionicons name="notifications-outline" size={20} color="#334155" />
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ width: 40, height: 40, backgroundColor: "#38bdf8", borderRadius: 12, alignItems: "center", justifyContent: "center" }}
                 onPress={() => router.push("/(customer)/profile")}
               >
-                <Ionicons name="person" size={18} color="#0f172a" />
+                <Ionicons name="person" size={18} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Tagline */}
-          <Text style={{ color: "#64748b", fontSize: 14, marginBottom: 20 }}>
+          <Text style={{ color: "#475569", fontSize: 14, marginBottom: 20 }}>
             Where would you like to travel today?
           </Text>
 
-          {/* ─── SEARCH CARD ─── */}
-          <View style={{
-            backgroundColor: "#1e293b",
-            borderRadius: 24,
-            padding: 20,
-            borderWidth: 1,
-            borderColor: "#334155",
-            shadowColor: "#38bdf8",
-            shadowOpacity: 0.08,
-            shadowRadius: 20,
-            elevation: 8,
-          }}>
-
-            {/* From → To with swap */}
+          {/* SEARCH CARD */}
+          <View
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: 24,
+              padding: 20,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 12,
+              elevation: 4,
+              borderWidth: 1,
+              borderColor: "#e2e8f0",
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "stretch", marginBottom: 14 }}>
               <View style={{ flex: 1, gap: 10 }}>
-                {/* FROM */}
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#0f172a",
-                    borderRadius: 14,
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    borderWidth: 1,
-                    borderColor: activeField === "from" ? "#38bdf8" : "#334155",
-                  }}
-                  onPress={() => setActiveField("from")}
-                >
-                  <Text style={{ color: "#38bdf8", fontSize: 9, fontWeight: "700", letterSpacing: 1.5, marginBottom: 4 }}>FROM</Text>
-                  <TextInput
-                    value={from}
-                    onChangeText={setFrom}
-                    onFocus={() => setActiveField("from")}
-                    onBlur={() => setActiveField(null)}
-                    style={{ color: "#f1f5f9", fontSize: 16, fontWeight: "700", padding: 0 }}
-                    placeholder="City or stop"
-                    placeholderTextColor="#475569"
-                  />
-                </TouchableOpacity>
+                {/* FROM Field */}
+                <View>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: "#f8fafc",
+                      borderRadius: 14,
+                      paddingHorizontal: 16,
+                      paddingVertical: 12,
+                      borderWidth: 1,
+                      borderColor: activeField === "from" ? "#38bdf8" : "#e2e8f0",
+                    }}
+                    onPress={() => setActiveField("from")}
+                    activeOpacity={1}
+                  >
+                    <Text style={{ color: "#38bdf8", fontSize: 9, fontWeight: "700", letterSpacing: 1, marginBottom: 4 }}>FROM</Text>
+                    <TextInput
+                      value={from}
+                      onChangeText={handleFromChange}
+                      onFocus={() => {
+                        clearBlurTimeout();
+                        setActiveField("from");
+                        if (from.trim().length > 0) {
+                          const suggestions = filterSuggestions(from);
+                          setFromSuggestions(suggestions);
+                          setShowFromSuggestions(suggestions.length > 0);
+                        }
+                      }}
+                      onBlur={handleFromBlur}
+                      style={{
+                        color: "#0f172a",
+                        fontSize: 16,
+                        fontWeight: "600",
+                        padding: 0,
+                        outlineColor:"transparent", // ✅ Remove default focus outline
+                      }}
+                      placeholder="City or stop"
+                      placeholderTextColor="#94a3b8"
+                      underlineColorAndroid="transparent"   // ✅ Removes default Android underline
+                      selectionColor="#38bdf8"              // ✅ Cursor/highlight color
+                    />
+                  </TouchableOpacity>
+                  {showFromSuggestions && renderSuggestionList(fromSuggestions, selectFromSuggestion)}
+                </View>
 
-                {/* TO */}
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: "#0f172a",
-                    borderRadius: 14,
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    borderWidth: 1,
-                    borderColor: activeField === "to" ? "#38bdf8" : "#334155",
-                  }}
-                  onPress={() => setActiveField("to")}
-                >
-                  <Text style={{ color: "#f97316", fontSize: 9, fontWeight: "700", letterSpacing: 1.5, marginBottom: 4 }}>TO</Text>
-                  <TextInput
-                    value={to}
-                    onChangeText={setTo}
-                    onFocus={() => setActiveField("to")}
-                    onBlur={() => setActiveField(null)}
-                    style={{ color: "#f1f5f9", fontSize: 16, fontWeight: "700", padding: 0 }}
-                    placeholder="City or stop"
-                    placeholderTextColor="#475569"
-                  />
-                </TouchableOpacity>
+                {/* TO Field */}
+                <View>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: "#f8fafc",
+                      borderRadius: 14,
+                      paddingHorizontal: 16,
+                      paddingVertical: 12,
+                      borderWidth: 1,
+                      // outlineColor:"transparent", // ✅ Remove default focus outline
+                      borderColor: activeField === "to" ? "#38bdf8" : "#e2e8f0",
+                    }}
+                    onPress={() => setActiveField("to")}
+                    activeOpacity={1}
+                  >
+                    <Text style={{ color: "#f97316", fontSize: 9, fontWeight: "700", letterSpacing: 1, marginBottom: 4 }}>TO</Text>
+                    <TextInput
+                      value={to}
+                      onChangeText={handleToChange}
+                      onFocus={() => {
+                        clearBlurTimeout();
+                        setActiveField("to");
+                        if (to.trim().length > 0) {
+                          const suggestions = filterSuggestions(to);
+                          setToSuggestions(suggestions);
+                          setShowToSuggestions(suggestions.length > 0);
+                        }
+                      }}
+                      onBlur={handleToBlur}
+                      style={{
+                        color: "#0f172a",
+                        fontSize: 16,
+                        fontWeight: "600",
+                        padding: 0,
+                        outlineColor:"transparent", // ✅ Remove default focus outline
+                      }}
+                      placeholder="City or stop"
+                      placeholderTextColor="#94a3b8"
+                      underlineColorAndroid="transparent"   // ✅ Removes default Android underline
+                      selectionColor="#38bdf8"
+                    />
+                  </TouchableOpacity>
+                  {showToSuggestions && renderSuggestionList(toSuggestions, selectToSuggestion)}
+                </View>
               </View>
 
-              {/* Swap button */}
+              {/* Swap Button */}
               <View style={{ width: 44, alignItems: "center", justifyContent: "center" }}>
                 <TouchableOpacity
                   onPress={handleSwap}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    backgroundColor: "#334155",
-                    borderRadius: 18,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderWidth: 1,
-                    borderColor: "#475569",
-                  }}
+                  style={{ width: 36, height: 36, backgroundColor: "#f1f5f9", borderRadius: 18, alignItems: "center", justifyContent: "center" }}
                 >
                   <Ionicons name="swap-vertical" size={18} color="#38bdf8" />
                 </TouchableOpacity>
               </View>
             </View>
 
-            {/* Date picker */}
+            {/* Date Picker */}
             <TouchableOpacity
               onPress={() => setShowCalendar(true)}
               style={{
-                backgroundColor: "#0f172a",
+                backgroundColor: "#f8fafc",
                 borderRadius: 14,
                 paddingHorizontal: 16,
-                paddingVertical: 14,
+                paddingVertical: 12,
                 borderWidth: 1,
-                borderColor: "#334155",
+                borderColor: "#e2e8f0",
                 flexDirection: "row",
                 alignItems: "center",
                 marginBottom: 16,
@@ -224,106 +389,125 @@ export default function HomeScreen() {
             >
               <Ionicons name="calendar-outline" size={18} color="#38bdf8" style={{ marginRight: 12 }} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: "#38bdf8", fontSize: 9, fontWeight: "700", letterSpacing: 1.5, marginBottom: 2 }}>DEPARTURE</Text>
-                <Text style={{ color: "#f1f5f9", fontSize: 15, fontWeight: "700" }}>
+                <Text style={{ color: "#38bdf8", fontSize: 9, fontWeight: "700", letterSpacing: 1, marginBottom: 2 }}>DEPARTURE</Text>
+                <Text style={{ color: "#0f172a", fontSize: 15, fontWeight: "600" }}>
                   {dayjs(date).format("ddd, DD MMM YYYY")}
                 </Text>
               </View>
-              <Feather name="chevron-right" size={16} color="#475569" />
+              <Feather name="chevron-right" size={16} color="#94a3b8" />
             </TouchableOpacity>
 
-            {/* Search button */}
+            {/* Search Button */}
             <TouchableOpacity
               onPress={handleSearch}
               style={{
                 backgroundColor: "#38bdf8",
                 borderRadius: 16,
-                paddingVertical: 16,
+                paddingVertical: 14,
                 alignItems: "center",
                 flexDirection: "row",
                 justifyContent: "center",
                 gap: 8,
               }}
             >
-              <Ionicons name="search" size={18} color="#0f172a" />
-              <Text style={{ color: "#0f172a", fontSize: 16, fontWeight: "800", letterSpacing: 0.3 }}>Find Buses</Text>
+              <Ionicons name="search" size={18} color="#ffffff" />
+              <Text style={{ color: "#ffffff", fontSize: 16, fontWeight: "700" }}>Find Buses</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* ─── STATS ROW ─── */}
-        <View style={{ backgroundColor: "#0f172a", flexDirection: "row", paddingHorizontal: 20, paddingBottom: 28, gap: 10 }}>
+        {/* STATS ROW */}
+        <View style={{ backgroundColor: "#ffffff", flexDirection: "row", paddingHorizontal: 20, paddingBottom: 28, gap: 10 }}>
           {[
-            { icon: "bus", value: "200+", label: "Daily Buses" },
-            { icon: "map", value: "50+", label: "Routes" },
+            { icon: "bus", value: dailyBuses, label: "Daily Buses" },
+            { icon: "map", value: isLoadingRoutes ? "..." : totalRoutes, label: "Routes" },
             { icon: "people", value: "10K+", label: "Travelers" },
           ].map((stat, i) => (
             <View key={i} style={{
               flex: 1,
-              backgroundColor: "#1e293b",
+              backgroundColor: "#f8fafc",
               borderRadius: 16,
               padding: 14,
               alignItems: "center",
               borderWidth: 1,
-              borderColor: "#334155",
+              borderColor: "#e2e8f0",
             }}>
               <Ionicons name={stat.icon} size={20} color="#38bdf8" />
-              <Text style={{ color: "#f1f5f9", fontSize: 16, fontWeight: "800", marginTop: 6 }}>{stat.value}</Text>
+              <Text style={{ color: "#0f172a", fontSize: 16, fontWeight: "800", marginTop: 6 }}>{stat.value}</Text>
               <Text style={{ color: "#64748b", fontSize: 10, marginTop: 2, textAlign: "center" }}>{stat.label}</Text>
             </View>
           ))}
         </View>
 
-        {/* ─── POPULAR ROUTES ─── */}
+        {/* POPULAR ROUTES SECTION */}
         <View style={{ backgroundColor: "#f8fafc", borderTopLeftRadius: 32, borderTopRightRadius: 32, paddingTop: 28 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: "800", color: "#0f172a" }}>Popular Routes</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/(customer)/popular-routes")}>
               <Text style={{ fontSize: 13, color: "#38bdf8", fontWeight: "600" }}>See all</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}>
-            {POPULAR_ROUTES.map((route, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={() => handleRoutePress(route)}
-                style={{
-                  width: 220,
-                  backgroundColor: "#fff",
-                  borderRadius: 20,
-                  overflow: "hidden",
-                  shadowColor: "#000",
-                  shadowOpacity: 0.08,
-                  shadowRadius: 12,
-                  elevation: 4,
-                }}
-              >
-                <ImageBackground
-                  source={{ uri: route.img }}
-                  style={{ height: 110, justifyContent: "flex-end", padding: 10 }}
-                  imageStyle={{ borderRadius: 0 }}
+          {isLoadingPopular ? (
+            <View style={{ padding: 40, alignItems: "center" }}>
+              <ActivityIndicator size="large" color="#38bdf8" />
+            </View>
+          ) : popularRoutes?.length === 0 ? (
+            <View style={{ padding: 40, alignItems: "center" }}>
+              <Text style={{ color: "#64748b", fontSize: 14 }}>No popular routes available</Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}>
+              {popularRoutes.map((route) => (
+                <TouchableOpacity
+                  key={route.route_id}
+                  onPress={() => handleRoutePress(route)}
+                  style={{
+                    width: 220,
+                    backgroundColor: "#ffffff",
+                    borderRadius: 20,
+                    overflow: "hidden",
+                    shadowColor: "#000",
+                    shadowOpacity: 0.05,
+                    shadowRadius: 8,
+                    elevation: 2,
+                  }}
                 >
-                  <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(15,23,42,0.45)" }} />
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
-                    <Text style={{ color: "#fff", fontSize: 13, fontWeight: "800" }}>{route.from} → {route.to}</Text>
-                    <View style={{ backgroundColor: route.tagColor, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
-                      <Text style={{ color: "#0f172a", fontSize: 9, fontWeight: "800" }}>{route.tag}</Text>
+                  <ImageBackground
+                    source={{
+                      uri: route.route_image ||
+                        `https://source.unsplash.com/featured/?${route.origin},${route.destination},bus`,
+                    }}
+                    style={{ height: 110, justifyContent: "flex-end", padding: 10 }}
+                    imageStyle={{ borderRadius: 0 }}
+                  >
+                    <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.3)" }} />
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+                      <Text style={{ color: "#fff", fontSize: 13, fontWeight: "800" }}>
+                        {route.origin} → {route.destination}
+                      </Text>
+                      <View style={{ backgroundColor: "#38bdf8", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 }}>
+                        <Text style={{ color: "#ffffff", fontSize: 9, fontWeight: "800" }}>Popular</Text>
+                      </View>
                     </View>
+                  </ImageBackground>
+                  <View style={{ padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Ionicons name="time-outline" size={13} color="#64748b" />
+                      <Text style={{ color: "#64748b", fontSize: 12 }}>
+                        ~{Math.floor(route.duration_minutes / 60)}h {route.duration_minutes % 60 > 0 ? `${route.duration_minutes % 60}m` : ""}
+                      </Text>
+                    </View>
+                    <Text style={{ color: "#f97316", fontSize: 14, fontWeight: "800" }}>
+                      NPR {parseInt(route.base_price || route.average_revenue || 1200).toLocaleString()}
+                    </Text>
                   </View>
-                </ImageBackground>
-                <View style={{ padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Ionicons name="time-outline" size={13} color="#64748b" />
-                    <Text style={{ color: "#64748b", fontSize: 12 }}>{route.duration}</Text>
-                  </View>
-                  <Text style={{ color: "#f97316", fontSize: 14, fontWeight: "800" }}>{route.price}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
 
-          {/* ─── WHY CHOOSE US ─── */}
+          {/* WHY CHOOSE US */}
           <View style={{ marginTop: 28, paddingHorizontal: 20, marginBottom: 8 }}>
             <Text style={{ fontSize: 18, fontWeight: "800", color: "#0f172a", marginBottom: 14 }}>Why Seti Himalayan?</Text>
             <View style={{ gap: 10 }}>
@@ -333,7 +517,7 @@ export default function HomeScreen() {
                 { icon: "headset", color: "#38bdf8", title: "24/7 Support", desc: "We're always here to help you" },
               ].map((item, i) => (
                 <View key={i} style={{
-                  backgroundColor: "#fff",
+                  backgroundColor: "#ffffff",
                   borderRadius: 16,
                   padding: 16,
                   flexDirection: "row",
@@ -342,13 +526,7 @@ export default function HomeScreen() {
                   borderWidth: 1,
                   borderColor: "#e2e8f0",
                 }}>
-                  <View style={{
-                    width: 44, height: 44,
-                    borderRadius: 14,
-                    backgroundColor: item.color + "18",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}>
+                  <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: item.color + "18", alignItems: "center", justifyContent: "center" }}>
                     <Ionicons name={item.icon} size={22} color={item.color} />
                   </View>
                   <View style={{ flex: 1 }}>
@@ -359,19 +537,18 @@ export default function HomeScreen() {
               ))}
             </View>
           </View>
-
           <View style={{ height: 100 }} />
         </View>
       </ScrollView>
 
-      {/* ─── CALENDAR MODAL ─── */}
+      {/* CALENDAR MODAL */}
       <Modal visible={showCalendar} transparent animationType="slide">
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.6)" }}>
-          <View style={{ backgroundColor: "#1e293b", borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20 }}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <View style={{ backgroundColor: "#ffffff", borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 20 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={{ color: "#f1f5f9", fontSize: 17, fontWeight: "700" }}>Select Departure Date</Text>
+              <Text style={{ color: "#0f172a", fontSize: 17, fontWeight: "700" }}>Select Departure Date</Text>
               <TouchableOpacity onPress={() => setShowCalendar(false)}>
-                <Ionicons name="close-circle" size={28} color="#475569" />
+                <Ionicons name="close-circle" size={28} color="#94a3b8" />
               </TouchableOpacity>
             </View>
             <Calendar
@@ -379,21 +556,19 @@ export default function HomeScreen() {
                 setDate(day.dateString);
                 setShowCalendar(false);
               }}
-              markedDates={{
-                [date]: { selected: true, selectedColor: "#38bdf8" },
-              }}
+              markedDates={{ [date]: { selected: true, selectedColor: "#38bdf8" } }}
               minDate={dayjs().format("YYYY-MM-DD")}
               theme={{
-                backgroundColor: "#1e293b",
-                calendarBackground: "#1e293b",
+                backgroundColor: "#ffffff",
+                calendarBackground: "#ffffff",
                 textSectionTitleColor: "#64748b",
                 selectedDayBackgroundColor: "#38bdf8",
-                selectedDayTextColor: "#0f172a",
+                selectedDayTextColor: "#ffffff",
                 todayTextColor: "#f97316",
-                dayTextColor: "#f1f5f9",
-                textDisabledColor: "#334155",
+                dayTextColor: "#0f172a",
+                textDisabledColor: "#cbd5e1",
                 arrowColor: "#38bdf8",
-                monthTextColor: "#f1f5f9",
+                monthTextColor: "#0f172a",
                 textDayFontWeight: "600",
                 textMonthFontWeight: "800",
               }}

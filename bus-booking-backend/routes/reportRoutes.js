@@ -13,12 +13,12 @@ import { apiLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
+router.get('/popular-routes', getPopularRoutes);
 // All report routes require admin authentication
 router.use(authenticate, isAdmin, apiLimiter);
 
 router.get('/dashboard', getAdminDashboard);
 router.get('/daily-revenue', validate(dateRangeSchema), getDailyRevenue);
-router.get('/popular-routes', getPopularRoutes);
 router.get('/booking-stats', validate(dateRangeSchema), getBookingStats);
 router.get('/utilization', getUtilizationReport);
 

@@ -16,7 +16,7 @@ export default function Index() {
 
   // Redirect based on role or login status
   if (!user) {
-    return <Redirect href="/(customer)" />; // Guest access to search
+    return <Redirect href="/login" />; // Guest access to search
   }
 
   if (user.role === "admin" || user.role === "super_admin") {
