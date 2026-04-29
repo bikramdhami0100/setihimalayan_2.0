@@ -3,11 +3,28 @@ import { successResponse, errorResponse } from '../utils/response.js';
 
 export const getUsers = async (req, res, next) => {
     try {
-        const filters = {};
-        if (req.query.role) filters.role = req.query.role;
-        if (req.query.status) filters.status = req.query.status;
-        const users = await User.getAll(filters);
-        successResponse(res, 'Users retrieved', { users });
+        const { role, status, page, limit, search } = req.query;
+
+        const filters = {
+            role: role || null,
+            status: status || null,
+            search: search || null,
+            page: page ? parseInt(page, 10) : 1,
+            limit: limit ? parseInt(limit, 10) : 10
+        };
+
+        const { rows: users, total, page: currentPage, limit: pageLimit } =
+            await User.getAll(filters);
+
+        successResponse(res, 'Users retrieved', {
+            users,
+            pagination: {
+                page: currentPage,
+                limit: pageLimit,
+                total,
+                totalPages: Math.ceil(total / pageLimit)
+            }
+        });
     } catch (err) {
         next(err);
     }

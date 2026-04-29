@@ -247,6 +247,7 @@ CREATE TABLE `audit_logs` (
 -- =============================================
 
 -- Insert Admin User (password: Admin@123)
+
 -- Note: Use bcrypt hash in production
 INSERT INTO `users` (`email`, `phone`, `full_name`, `password_hash`, `role`, `status`, `is_email_verified`) VALUES 
 ('admin@busbooking.com', '9800000000', 'System Administrator', '$2a$10$YourHashHere', 'super_admin', 'active', TRUE);
@@ -286,6 +287,77 @@ INSERT INTO `schedules` (`bus_id`, `route_id`, `departure_time`, `arrival_time`,
 (1, 8, NOW() + INTERVAL 2 DAY + INTERVAL 2 HOUR, NOW() + INTERVAL 2 DAY + INTERVAL 7 HOUR, 1100, 40, 40, 'scheduled'),
 (4, 9, NOW() + INTERVAL 1 DAY, NOW() + INTERVAL 1 DAY + INTERVAL 4 HOUR, 900, 20, 20, 'scheduled'),
 (5, 10, NOW() + INTERVAL 3 DAY, NOW() + INTERVAL 3 DAY + INTERVAL 12 HOUR, 2200, 36, 36, 'scheduled');
+-- insert sample bookings 
+INSERT INTO bookings (
+  user_id,
+  schedule_id,
+  booking_reference,
+  selected_seats,
+  total_amount,
+  status,
+  payment_gateway,
+  payment_reference,
+  seat_lock_expires_at,
+  confirmed_at,
+  cancelled_at,
+  cancellation_reason,
+  refund_amount,
+  refund_processed_at,
+  passenger_details,
+  special_requests,
+  ticket_downloaded,
+  ticket_downloaded_at
+) VALUES
+
+(2, 1, 'BK2001', '["A1","A2"]', 2400.00, 'confirmed', 'esewa', 'TXN001',
+ NOW() + INTERVAL 10 MINUTE, NOW(), NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger One","age":30}]',
+ 'Window seat', TRUE, NOW()),
+
+(2, 2, 'BK2002', '["B1"]', 1200.00, 'pending_payment', 'khalti', NULL,
+ NOW() + INTERVAL 15 MINUTE, NULL, NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Two","age":25}]',
+ NULL, FALSE, NULL),
+
+(2, 3, 'BK2003', '["C1","C2"]', 2000.00, 'confirmed', 'connectips', 'TXN003',
+ NOW() + INTERVAL 5 MINUTE, NOW(), NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Three","age":28}]',
+ NULL, TRUE, NOW()),
+
+(2, 4, 'BK2004', '["D1"]', 1800.00, 'cancelled', 'esewa', 'TXN004',
+ NOW(), NULL, NOW(), 'Personal reason', 1800.00, NOW(),
+ '[{"name":"Passenger Four","age":35}]',
+ NULL, FALSE, NULL),
+
+(2, 5, 'BK2005', '["E1","E2"]', 2700.00, 'expired', 'khalti', NULL,
+ NOW() - INTERVAL 1 HOUR, NULL, NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Five","age":32}]',
+ NULL, FALSE, NULL),
+
+(2, 6, 'BK2006', '["F1"]', 900.00, 'payment_processing', 'esewa', 'TXN006',
+ NOW() + INTERVAL 20 MINUTE, NULL, NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Six","age":29}]',
+ NULL, FALSE, NULL),
+
+(2, 7, 'BK2007', '["G1","G2"]', 4400.00, 'confirmed', 'khalti', 'TXN007',
+ NOW() + INTERVAL 10 MINUTE, NOW(), NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Seven","age":26}]',
+ NULL, TRUE, NOW()),
+
+(2, 8, 'BK2008', '["H1"]', 1700.00, 'refunded', 'connectips', 'TXN008',
+ NOW(), NOW(), NULL, 'Cancelled by admin', 1700.00, NOW(),
+ '[{"name":"Passenger Eight","age":38}]',
+ NULL, TRUE, NOW()),
+
+(2, 9, 'BK2009', '["I1","I2"]', 2200.00, 'confirmed', 'esewa', 'TXN009',
+ NOW() + INTERVAL 5 MINUTE, NOW(), NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Nine","age":21}]',
+ NULL, TRUE, NOW()),
+
+(2, 10, 'BK2010', '["J1"]', 1200.00, 'pending_payment', 'khalti', NULL,
+ NOW() + INTERVAL 30 MINUTE, NULL, NULL, NULL, NULL, NULL,
+ '[{"name":"Passenger Ten","age":45}]',
+ NULL, FALSE, NULL);
 -- =============================================
 -- STORED PROCEDURES
 -- =============================================

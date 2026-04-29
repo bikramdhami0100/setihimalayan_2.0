@@ -24,6 +24,19 @@ router.get('/my-bookings', getUserBookings);
 router.get('/reference/:reference', getBookingDetails);
 router.post('/:reference/cancel', validate(cancelBookingSchema), simpleAudit('CANCEL', 'booking'), cancelBooking);
 router.get('/:reference/ticket', downloadTicket);
-router.get("/all",    authenticate, getAllBookings); // Admin route to get all bookings with pagination and search
+router.get("/",    authenticate, getAllBookings); // Admin route to get all bookings with pagination and search
+// Additional admin routes for booking management can be added here (e.g., update, delete)
+// export const createBooking = (data) => api.post('/bookings', data);
+// export const updateBooking = (id, data) => api.put(`/bookings/${id}`, data);
+// export const deleteBooking = (id) => api.delete(`/bookings/${id}`);
+router.post('/', validate(bookingSchema), simpleAudit('CREATE', 'booking'), initiateBooking);
+router.put('/:id', validate(bookingSchema), simpleAudit('UPDATE', 'booking'), (req, res) => {
+    // Implement update booking logic here
+    res.status(501).json({ message: 'Update booking not implemented yet' });
+});
+router.delete('/:id', simpleAudit('DELETE', 'booking'), (req, res) => {
+    // Implement delete booking logic here
+    res.status(501).json({ message: 'Delete booking not implemented yet' });
+});
 
 export default router;

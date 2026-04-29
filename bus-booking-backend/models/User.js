@@ -91,21 +91,62 @@ class User {
         );
     }
 
-    static async getAll(filters = {}) {
-        let query = 'SELECT id, email, phone, full_name, role, status, created_at FROM users WHERE deleted_at IS NULL';
-        const values = [];
-        if (filters.role) {
-            query += ' AND role = ?';
-            values.push(filters.role);
-        }
-        if (filters.status) {
-            query += ' AND status = ?';
-            values.push(filters.status);
-        }
-        query += ' ORDER BY created_at DESC';
-        const [rows] = await pool.execute(query, values);
-        return rows;
+static async getAll(filters = {}) {
+    let baseQuery = 'FROM users WHERE deleted_at IS NULL';
+    let dataQuery = `
+        SELECT id, email, phone, full_name, role, status, 
+        address, city, state, country, postal_code,date_of_birth, profile_image,
+        last_login_at,created_at 
+        ${baseQuery}
+    `;
+    let countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+
+    const values = [];
+    const countValues = [];
+
+    // Filters
+    if (filters.role) {
+        baseQuery += ' AND role = ?';
+        values.push(filters.role);
+        countValues.push(filters.role);
     }
+
+    if (filters.status) {
+        baseQuery += ' AND status = ?';
+        values.push(filters.status);
+        countValues.push(filters.status);
+    }
+
+    if (filters.search) {
+        baseQuery += ' AND (email LIKE ? OR phone LIKE ? OR full_name LIKE ?)';
+        const searchValue = `%${filters.search}%`;
+        values.push(searchValue, searchValue, searchValue);
+        countValues.push(searchValue, searchValue, searchValue);
+    }
+
+    // Rebuild queries after filters applied
+    dataQuery = `
+        SELECT id, email, phone, full_name, role, status, profile_image, date_of_birth, address, city, state, country, postal_code,
+        last_login_at,
+        created_at 
+        ${baseQuery}
+        ORDER BY created_at DESC
+    `;
+    countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+
+    // Pagination
+    let page = filters.page || 1;
+    let limit = filters.limit || 10;
+    const offset = (page - 1) * limit;
+
+    dataQuery += ' LIMIT ? OFFSET ?';
+    values.push(limit, offset);
+
+    const [[{ total }]] = await pool.execute(countQuery, countValues);
+    const [rows] = await pool.execute(dataQuery, values);
+
+    return { rows, total, page, limit };
+}
 
     static async delete(userId) {
         await pool.execute(

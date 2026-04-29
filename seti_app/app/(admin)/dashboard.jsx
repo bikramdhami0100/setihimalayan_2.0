@@ -1,237 +1,406 @@
-import React, { useState, useEffect, useContext} from "react";
-import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView, ActivityIndicator, RefreshControl } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { getAdminDashboard, getPopularRoutes } from "../../api/reports";
-import { getBuses } from "../../api/buses";
-import { getRoutes } from "../../api/routes";
+// app/dashboard.jsx (or AdminDashboard.jsx)
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+  RefreshControl,
+  Dimensions,
+} from "react-native";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAdminData } from "../../context/AdminContext";
+import {
+  getAdminDashboard,
+  getDailyRevenue,
+  getPopularRoutes,
+} from "../../api/reports";
+import dayjs from "dayjs"; // if not installed: npx expo install dayjs
 
-export default function Dashboard() {
-  const all_data=useAdminData();
-  console.log(all_data);
-  const [activeTab, setActiveTab] = useState("Buses");
-  const [revenueTimeframe, setRevenueTimeframe] = useState("30 Days");
+const { width } = Dimensions.get("window");
+
+// ─── Small helper to format currency ─────────────────────────────────────────
+const formatCurrency = (amount) => {
+  if (!amount) return "रु 0";
+  return `रु ${Number(amount).toLocaleString()}`;
+};
+
+// ─── Main Dashboard Component ────────────────────────────────────────────────
+export default function AdminDashboard() {
+  const {
+    buses,
+    routes,
+    schedules,
+    bookings,
+    fetchBuses,
+    fetchRoutes,
+    fetchSchedules,
+    fetchBookings,
+    loading,
+    refreshing,
+  } = useAdminData();
+
+  const [dashboardStats, setDashboardStats] = useState(null);
+  const [revenueData, setRevenueData] = useState([]);   // { date, revenue }
+  const [popularRoutes, setPopularRoutes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [popularRoutesData, setPopularRoutesData] = useState([]);
-  const [buses, setBuses] = useState([]);
-  const [routes, setRoutes] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [revenueTimeframe, setRevenueTimeframe] = useState("7days"); // 7days or 30days
+  const [activeTab, setActiveTab] = useState("Buses"); // tabs for tables
 
-  const fetchData = async () => {
+  // ── Fetch dashboard summary and revenue ──────────────────────────────────
+  const fetchDashboardData = useCallback(async () => {
     try {
-      const [dashRes, routesRes, busesRes, popularRes] = await Promise.all([
-        getAdminDashboard(),
-        getRoutes({ limit: 5 }),
-        getBuses({ limit: 5 }),
-        getPopularRoutes()
-      ]);
+      const dashRes = await getAdminDashboard();
+      setDashboardStats(dashRes.data.data);
 
-      setDashboardData(dashRes.data.data);
-      setRoutes(routesRes.data.data);
-      setBuses(busesRes.data.data);
-      setPopularRoutesData(popularRes.data.data);
+      // Revenue trend
+      const endDate = dayjs().format("YYYY-MM-DD");
+      const startDate = dayjs()
+        .subtract(revenueTimeframe === "7days" ? 6 : 29, "day")
+        .format("YYYY-MM-DD");
+      const revRes = await getDailyRevenue(startDate, endDate);
+      // API returns { date, total_revenue } array
+      setRevenueData(revRes.data.data || []);
+
+      // Popular routes
+      const popRes = await getPopularRoutes();
+      setPopularRoutes(popRes.data.data || []);
     } catch (err) {
-      console.error("Dashboard data fetch error:", err);
+      console.error("Dashboard fetch error:", err);
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
+      setIsRefreshing(false);
     }
-  };
+  }, [revenueTimeframe]);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchDashboardData();
+  }, [fetchDashboardData, revenueTimeframe]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchData();
+  // Pull-to-refresh also updates context data
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchDashboardData();
+    fetchBuses(true);
+    fetchRoutes(true);
+    fetchSchedules(true);
+    fetchBookings(true);
   };
 
+  // ── Stats cards data ─────────────────────────────────────────────────────
+  const stats = [
+    {
+      title: "Total Revenue",
+      value: formatCurrency(dashboardStats?.total_revenue),
+      icon: "cash-outline",
+      iconBg: "bg-blue-100",
+      iconColor: "#3b82f6",
+    },
+    {
+      title: "Total Bookings",
+      value: dashboardStats?.total_bookings || "0",
+      icon: "ticket-outline",
+      iconBg: "bg-indigo-100",
+      iconColor: "#6366f1",
+    },
+    {
+      title: "Active Users",
+      value: dashboardStats?.active_users || "0",
+      icon: "person-outline",
+      iconBg: "bg-cyan-100",
+      iconColor: "#06b6d4",
+    },
+    {
+      title: "Total Buses",
+      value: dashboardStats?.total_buses || "0",
+      icon: "bus-outline",
+      iconBg: "bg-amber-100",
+      iconColor: "#d97706",
+    },
+  ];
+
+  // ── Render bar chart for revenue ──────────────────────────────────────────
+  const renderRevenueChart = () => {
+    if (!revenueData.length) return null;
+
+    const maxRevenue = Math.max(...revenueData.map((d) => d.total_revenue), 1);
+    return (
+      <View className="flex-row justify-between items-end mt-4 px-2" style={{ height: 140 }}>
+        {revenueData.map((item, idx) => {
+          const height = (item.total_revenue / maxRevenue) * 100;
+          return (
+            <View key={idx} className="items-center flex-1 mx-0.5">
+              <View
+                className={`w-full rounded-t-lg ${
+                  idx === revenueData.length - 1 ? "bg-[#1e3a8a]" : "bg-[#dbeafe]"
+                }`}
+                style={{ height: `${height}%` }}
+              />
+              <Text className="text-[8px] text-gray-400 mt-1">
+                {dayjs(item.date).format("DD/MM")}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
+  // ── Initial loading ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-[#f8fafc] justify-center items-center">
         <ActivityIndicator size="large" color="#1e3a8a" />
+        <Text className="mt-3 text-gray-400 font-bold text-sm">Analyzing data…</Text>
       </SafeAreaView>
     );
   }
 
-  const statsData = [
-    { id: 1, title: "TOTAL REVENUE", value: `रु ${dashboardData?.total_revenue?.toLocaleString() || '0'}`, icon: "cash-outline", iconBg: "bg-blue-100", iconColor: "#3b82f6", trend: "+ 12%", trendBg: "bg-orange-50", trendColor: "text-orange-500" },
-    { id: 2, title: "TOTAL BOOKINGS", value: dashboardData?.total_bookings || '0', icon: "ticket-outline", iconBg: "bg-indigo-100", iconColor: "#6366f1", trend: "+ 8.4%", trendBg: "bg-orange-50", trendColor: "text-orange-500" },
-    { id: 3, title: "ACTIVE USERS", value: dashboardData?.active_users || '0', icon: "person-outline", iconBg: "bg-cyan-100", iconColor: "#06b6d4", trend: "- 2%", trendBg: "bg-red-50", trendColor: "text-red-500" },
-    { id: 4, title: "TOTAL BUSES", value: dashboardData?.total_buses || '0', icon: "bus-outline", iconBg: "bg-amber-100", iconColor: "#d97706", trend: "Stable", trendBg: "bg-orange-50", trendColor: "text-orange-500" },
-  ];
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <SafeAreaView className="flex-1 bg-[#f8fafc]">
-      <ScrollView 
-        className="flex-1 p-4" 
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
+      <ScrollView
+        className="flex-1 px-4 pt-4"
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
+        }
       >
-        
-        {/* Stats Grid */}
+        {/* Header */}
+        <Text className="text-2xl font-black text-blue-900 mb-1">Dashboard</Text>
+        <Text className="text-xs text-gray-400 mb-4">
+          {dayjs().format("dddd, MMMM D, YYYY")}
+        </Text>
+
+        {/* ── Stats Grid ───────────────────────────────────────── */}
         <View className="flex-row flex-wrap justify-between">
-          {statsData.map((stat) => (
-            <View key={stat.id} className="bg-white rounded-2xl p-4 mb-4 w-[48%] shadow-sm border border-gray-100">
-              <View className="flex-row justify-between items-start mb-3">
-                <View className={`w-10 h-10 rounded-xl items-center justify-center ${stat.iconBg}`}>
-                  <Ionicons name={stat.icon} size={20} color={stat.iconColor} />
-                </View>
-                <View className={`${stat.trendBg} px-2 py-1 rounded-md flex-row items-center`}>
-                  {stat.trend.includes('Stable') ? (
-                    <Ionicons name="checkmark-circle" size={10} color="#f97316" className="mr-1" />
-                  ) : (
-                    <Ionicons name={stat.trend.includes('+') ? "trending-up" : "trending-down"} size={10} color={stat.trend.includes('+') ? "#f97316" : "#ef4444"} className="mr-1" />
-                  )}
-                  <Text className={`text-[10px] font-bold ${stat.trendColor}`}>{stat.trend}</Text>
-                </View>
+          {stats.map((stat, idx) => (
+            <View
+              key={idx}
+              className="bg-white rounded-2xl p-4 mb-4 w-[48%] shadow-sm border border-gray-100"
+            >
+              <View
+                className={`w-10 h-10 rounded-xl items-center justify-center mb-3 ${stat.iconBg}`}
+              >
+                <Ionicons name={stat.icon} size={20} color={stat.iconColor} />
               </View>
-              <Text className="text-gray-400 text-[10px] font-bold tracking-wider mb-1">{stat.title}</Text>
-              <Text className="text-[#1d3557] text-xl font-bold">{stat.value}</Text>
+              <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                {stat.title}
+              </Text>
+              <Text className="text-xl font-black text-slate-800 mt-0.5">
+                {stat.value}
+              </Text>
             </View>
           ))}
         </View>
 
-        {/* Revenue Trends */}
+        {/* ── Revenue Trends (chart) ───────────────────────────── */}
         <View className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-gray-100">
-          <View className="flex-row justify-between items-center mb-8">
-            <Text className="text-[#1d3557] text-lg font-bold">Revenue Trends</Text>
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="text-lg font-bold text-[#1d3557]">Revenue Trends</Text>
             <View className="flex-row bg-gray-100 rounded-full p-1">
-              <TouchableOpacity 
-                className={`px-3 py-1 rounded-full ${revenueTimeframe === '7 Days' ? 'bg-white shadow-sm' : ''}`}
-                onPress={() => setRevenueTimeframe('7 Days')}
-              >
-                <Text className={`text-xs font-semibold ${revenueTimeframe === '7 Days' ? 'text-gray-800' : 'text-gray-500'}`}>7 Days</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                className={`px-3 py-1 rounded-full ${revenueTimeframe === '30 Days' ? 'bg-[#0f172a] shadow-sm' : ''}`}
-                onPress={() => setRevenueTimeframe('30 Days')}
-              >
-                <Text className={`text-xs font-semibold ${revenueTimeframe === '30 Days' ? 'text-white' : 'text-gray-500'}`}>30 Days</Text>
-              </TouchableOpacity>
+              {["7days", "30days"].map((tf) => (
+                <TouchableOpacity
+                  key={tf}
+                  onPress={() => setRevenueTimeframe(tf)}
+                  className={`px-3 py-1 rounded-full ${
+                    revenueTimeframe === tf ? "bg-[#1e3a8a]" : ""
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-bold ${
+                      revenueTimeframe === tf ? "text-white" : "text-gray-500"
+                    }`}
+                  >
+                    {tf === "7days" ? "7 Days" : "30 Days"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-          
-          {/* Mock Bar Chart */}
-          <View className="flex-row justify-between items-end h-48 px-2 pb-6 relative">
-            {[45, 65, 55, 85, 100, 70, 50].map((height, i) => (
-              <View key={i} className="items-center w-8">
-                {i === 4 && (
-                  <View className="absolute -top-8 bg-[#0f172a] px-2 py-1 rounded">
-                    <Text className="text-white text-[10px] font-bold">₹680k</Text>
-                  </View>
-                )}
-                <View 
-                  className={`w-4 rounded-t-lg ${i === 4 ? 'bg-[#0f172a]' : 'bg-[#eff6ff]'}`}
-                  style={{ height: `${height}%` }}
-                />
-                <Text className="text-gray-400 text-[10px] absolute -bottom-5">Wk {i+1}</Text>
-              </View>
-            ))}
-          </View>
+
+          {revenueData.length > 0 ? (
+            renderRevenueChart()
+          ) : (
+            <View className="h-32 items-center justify-center">
+              <Text className="text-gray-400 text-xs">No revenue data available</Text>
+            </View>
+          )}
         </View>
 
-        {/* Popular Routes */}
+        {/* ── Popular Routes ────────────────────────────────────── */}
         <View className="bg-white rounded-3xl p-5 mb-4 shadow-sm border border-gray-100">
-          <Text className="text-[#1d3557] text-base font-semibold mb-5">Popular Routes</Text>
-          
-          {/* {popularRoutesData?.map((route, idx) => (
-            <View key={idx} className="mb-4">
-              <View className="flex-row justify-between mb-2">
-                <Text className="text-gray-800 text-xs font-medium">{route.origin} → {route.destination}</Text>
-                <Text className="text-gray-800 text-xs font-medium">{route.percentage}%</Text>
-              </View>
-              <View className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden flex-row">
-                <View 
-                  className={`${route.percentage > 65 ? 'bg-[#1e3a8a]' : (route.percentage > 40 ? 'bg-[#38bdf8]' : 'bg-gray-500')} rounded-full`}
-                  style={{ width: `${route.percentage}%` }}
-                />
-              </View>
-            </View>
-          ))} */}
-          
-          <TouchableOpacity className="mt-4 py-3 border border-gray-200 rounded-xl items-center">
-            <Text className="text-[#457b9d] font-semibold text-sm">View All Analytics</Text>
-          </TouchableOpacity>
+          <Text className="text-base font-bold text-[#1d3557] mb-4">
+            Popular Routes
+          </Text>
+          {popularRoutes.length > 0 ? (
+            popularRoutes.map((route, idx) => {
+              const maxBookings = Math.max(
+                ...popularRoutes.map((r) => r.booking_count),
+                1
+              );
+              const pct = (route.booking_count / maxBookings) * 100;
+              return (
+                <View key={idx} className="mb-3">
+                  <View className="flex-row justify-between mb-1">
+                    <Text className="text-xs font-semibold text-gray-700">
+                      {route.origin} → {route.destination}
+                    </Text>
+                    <Text className="text-xs font-semibold text-gray-500">
+                      {route.booking_count} bookings
+                    </Text>
+                  </View>
+                  <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <View
+                      className="h-full bg-[#1e3a8a] rounded-full"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <Text className="text-xs text-gray-400">No data</Text>
+          )}
         </View>
 
-        {/* Dynamic Tabs Section: Buses / Routes / Schedules */}
+        {/* ── Tabs: Recent Buses / Routes / Schedules ───────────── */}
         <View className="bg-white rounded-3xl mb-6 shadow-sm overflow-hidden border border-gray-100">
           <View className="flex-row border-b border-gray-100 px-2 pt-2">
-            {['Buses', 'Routes', 'Schedules'].map(tab => (
-              <TouchableOpacity 
+            {["Buses", "Routes", "Schedules"].map((tab) => (
+              <TouchableOpacity
                 key={tab}
-                className={`px-4 py-3 border-b-2 ${activeTab === tab ? 'border-[#1e3a8a]' : 'border-transparent'}`}
+                className={`px-4 py-3 border-b-2 ${
+                  activeTab === tab ? "border-[#1e3a8a]" : "border-transparent"
+                }`}
                 onPress={() => setActiveTab(tab)}
               >
-                <Text className={`font-semibold text-sm ${activeTab === tab ? 'text-[#1e3a8a]' : 'text-gray-400'}`}>
+                <Text
+                  className={`font-semibold text-sm ${
+                    activeTab === tab ? "text-[#1e3a8a]" : "text-gray-400"
+                  }`}
+                >
                   {tab}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {activeTab === 'Buses' && (
+          {activeTab === "Buses" && (
             <View>
-              <View className="bg-[#f8fafc] flex-row px-5 py-3 border-b border-gray-100">
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider">Bus Number</Text>
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider text-center">Operator</Text>
-                <Text className="flex-[0.8] text-gray-500 text-[10px] font-bold tracking-wider text-right">Type</Text>
-              </View>
-              {/* {buses.map((bus) => (
-                <View key={bus._id} className="flex-row px-5 py-4 border-b border-gray-100 items-center">
-                  <View className="flex-1">
-                    <Text className="text-[#1e3a8a] font-bold text-xs">{bus.bus_number}</Text>
+              {buses.length > 0 ? (
+                buses.slice(0, 5).map((bus) => (
+                  <View
+                    key={bus.id}
+                    className="flex-row items-center px-5 py-4 border-b border-gray-50"
+                  >
+                    <MaterialCommunityIcons name="bus" size={18} color="#1e3a8a" />
+                    <View className="ml-3 flex-1">
+                      <Text className="text-xs font-bold text-slate-800">
+                        {bus.bus_number}
+                      </Text>
+                      <Text className="text-[10px] text-gray-400">
+                        {bus.bus_type} · {bus.total_seats} seats
+                      </Text>
+                    </View>
+                    <View
+                      className={`w-2 h-2 rounded-full ${
+                        bus.status === "active" ? "bg-green-500" : "bg-gray-400"
+                      }`}
+                    />
                   </View>
-                  <View className="flex-1 flex-row items-center justify-center">
-                    <Text className="text-gray-800 text-xs mr-1 text-center leading-tight">{bus.operator_name}</Text>
-                    {bus.is_active && <View className="w-1.5 h-1.5 bg-[#38bdf8] rounded-full" />}
-                  </View>
-                  <View className="flex-[0.8] items-end">
-                    <Text className="text-gray-400 text-[10px] text-right leading-tight uppercase">{bus.bus_type}</Text>
-                  </View>
-                </View>
-              ))} */}
+                ))
+              ) : (
+                <Text className="p-4 text-xs text-gray-400 text-center">
+                  No buses loaded.
+                </Text>
+              )}
             </View>
           )}
 
-          {activeTab === 'Routes' && (
+          {activeTab === "Routes" && (
             <View>
-              <View className="bg-[#f8fafc] flex-row px-5 py-3 border-b border-gray-100">
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider">Route</Text>
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider text-right">Distance</Text>
-              </View>
-              {/* {routes.map((r) => (
-                <View key={r._id} className="flex-row px-5 py-4 border-b border-gray-100 items-center">
-                  <Text className="flex-1 text-[#1e3a8a] font-bold text-xs">{r.origin} - {r.destination}</Text>
-                  <Text className="flex-1 text-gray-800 text-xs text-right">{r.distance} km</Text>
-                </View>
-              ))} */}
+              {routes.length > 0 ? (
+                routes.slice(0, 5).map((route) => (
+                  <View
+                    key={route.id}
+                    className="flex-row items-center px-5 py-4 border-b border-gray-50"
+                  >
+                    <MaterialCommunityIcons
+                      name="routes"
+                      size={18}
+                      color="#1e3a8a"
+                    />
+                    <View className="ml-3 flex-1">
+                      <Text className="text-xs font-bold text-slate-800">
+                        {route.origin} → {route.destination}
+                      </Text>
+                      <Text className="text-[10px] text-gray-400">
+                        {route.distance_km} km · {route.base_price} NPR
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text className="p-4 text-xs text-gray-400 text-center">
+                  No routes loaded.
+                </Text>
+              )}
             </View>
           )}
 
-          {activeTab === 'Schedules' && (
+          {activeTab === "Schedules" && (
             <View>
-              <View className="bg-[#f8fafc] flex-row px-5 py-3 border-b border-gray-100">
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider">Route</Text>
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider text-center">Time</Text>
-                <Text className="flex-1 text-gray-500 text-[10px] font-bold tracking-wider text-right">Status</Text>
-              </View>
-              {/* Note: Schedules could be fetched similarly if needed */}
-              <View className="p-4 items-center">
-                 <Text className="text-gray-400 text-xs">Schedules data integration in progress</Text>
-              </View>
+              {schedules.length > 0 ? (
+                schedules.slice(0, 5).map((sch) => (
+                  <View
+                    key={sch.id}
+                    className="flex-row items-center px-5 py-4 border-b border-gray-50"
+                  >
+                    <MaterialCommunityIcons
+                      name="clock-outline"
+                      size={18}
+                      color="#1e3a8a"
+                    />
+                    <View className="ml-3 flex-1">
+                      <Text className="text-xs font-bold text-slate-800">
+                        {sch.origin} → {sch.destination}
+                      </Text>
+                      <Text className="text-[10px] text-gray-400">
+                        {dayjs(sch.departure_time).format("MMM DD, hh:mm A")} ·{" "}
+                        {sch.available_seats} seats left
+                      </Text>
+                    </View>
+                    <View
+                      className={`px-2 py-0.5 rounded-full ${
+                        sch.status === "scheduled"
+                          ? "bg-blue-100"
+                          : "bg-red-100"
+                      }`}
+                    >
+                      <Text
+                        className={`text-[9px] font-bold ${
+                          sch.status === "scheduled"
+                            ? "text-blue-700"
+                            : "text-red-700"
+                        }`}
+                      >
+                        {sch.status}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text className="p-4 text-xs text-gray-400 text-center">
+                  No schedules loaded.
+                </Text>
+              )}
             </View>
           )}
-
-          <TouchableOpacity className="py-4 items-center bg-white">
-            <Text className="text-[#1e3a8a] text-sm font-semibold">Download Report as CSV</Text>
-          </TouchableOpacity>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );

@@ -6,6 +6,7 @@ import * as scheduleApi from '../api/schedules';
 import * as reportApi from '../api/reports';
 import { getProfile } from '../api/auth'; // For user data if needed or a dedicated user API
 import { getAccessToken } from '../utils/storage';
+import * as usersApi from '../api/users'; // Assuming you have a users API module for admin user management
 
 const AdminContext = createContext();
 
@@ -48,6 +49,20 @@ export function AdminProvider({ children }) {
   const setKeyRefreshing = (key, val) => setRefreshing(prev => ({ ...prev, [key]: val }));
 
   // ── ACTIONS ────────────────────────────────────────────────────────────
+const fetchUsers = useCallback(async (isRefreshing = false) => {
+  const key = 'users';
+  isRefreshing ? setKeyRefreshing(key, true) : setKeyLoading(key, true);
+  try {
+    const { page, limit } = getPagination(key);
+    const search = getSearchQuery(key);
+    const res = await usersApi.getUsers({ page: page + 1, limit, search });
+    setUsers(res.data.data.users || []);
+    updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+  } finally {
+    setKeyLoading(key, false);
+    setKeyRefreshing(key, false);
+  }
+}, [paginations.users, searchQueries.users]);
 
   const fetchBuses = useCallback(async (isRefreshing = false) => {
     const key = 'buses';
@@ -85,19 +100,21 @@ export function AdminProvider({ children }) {
     }
   }, [paginations.bookings, searchQueries.bookings]);
 
-  const fetchRoutes = useCallback(async (isRefreshing = false) => {
-    const key = 'routes';
-    isRefreshing ? setKeyRefreshing(key, true) : setKeyLoading(key, true);
-    try {
-      const { page, limit } = getPagination(key);
-      const res = await routeApi.getRoutes({ page: page + 1, limit });
-      setRoutes(res.data.data.routes || []);
-      updatePagination(key, { total: res.data.data.pagination?.total || 0 });
-    } finally {
-      setKeyLoading(key, false);
-      setKeyRefreshing(key, false);
-    }
-  }, [paginations.routes]);
+
+const fetchRoutes = useCallback(async (isRefreshing = false) => {
+  const key = 'routes';
+  isRefreshing ? setKeyRefreshing(key, true) : setKeyLoading(key, true);
+  try {
+    const { page, limit } = getPagination(key);
+    const search = getSearchQuery(key);
+    const res = await routeApi.getRoutes({ page: page + 1, limit, search }); // <-- pass search
+    setRoutes(res.data.data.routes || []);
+    updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+  } finally {
+    setKeyLoading(key, false);
+    setKeyRefreshing(key, false);
+  }
+}, [paginations.routes, searchQueries.routes]);
 
   const fetchDashboard = useCallback(async () => {
     const key = 'dashboard';
@@ -131,6 +148,7 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
     fetchBookings();
     fetchRoutes();
     fetchSchedules();
+    fetchUsers();
   } , []);
   // ── Combined Context Object
   const value = {
@@ -142,6 +160,7 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
       reports, 
       dashboard, 
       users,
+      fetchUsers,
        fetchSchedules, 
     // Status
     loading, refreshing,
