@@ -41,13 +41,14 @@ export default function PassengerDetails() {
     
     try {
       const result = await initiateBooking(scheduleId, selectedSeats, details, "");
+      console.log(result,"this is result")
       if (result.success) {
         router.push({ 
           pathname: "/(customer)/payment", 
           params: { 
-            bookingId: result.booking._id,
-            amount: result.booking.total_amount,
-            reference: result.booking.reference_number
+            bookingId: result?.booking?.booking_id,
+            amount: result?.booking?.total_amount,
+            reference: result?.booking?.booking_reference
           } 
         });
       } else {
@@ -61,7 +62,7 @@ export default function PassengerDetails() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8fafc]">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}

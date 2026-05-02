@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext } from "react";
 import {
   View,
@@ -18,10 +19,62 @@ import { BookingContext } from "../../context/BookingContext";
 import { UIContext } from "../../context/UIContext";
 
 const { width } = Dimensions.get("window");
-// Smaller seat size for better fit on mobile
-const SEAT_SIZE = Math.min(48, (width - 100) / 5); // max 48px, responsive
+const SEAT_SIZE = Math.min(48, (width - 100) / 5);
 const AISLE_WIDTH = SEAT_SIZE * 0.5;
 const ROW_LABEL_WIDTH = 24;
+
+// -------------------------------------------------------------------
+// Helper: Map old numeric IDs to new A/B scheme
+// -------------------------------------------------------------------
+const transformSeatIds = (layoutRows) => {
+  // Assume a 2x2 layout: 4 columns per row, left=2, right=2
+  const leftCols = 2;
+  const rightCols = 2;
+  const rows = layoutRows.length;
+
+  // Build a full mapping for this layout
+  const oldToNew = {};
+  let aCounter = 1;
+  let bCounter = 1;
+
+  // We need to iterate in the order the old IDs were originally assigned:
+  // The fallback and the flat-to-rows logic both use row-major order:
+  // For each row, left seats first then right seats.
+  // So we'll generate the mapping by simulating that order.
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < leftCols; c++) {
+      const oldId = r * (leftCols + rightCols) + c + 1; // original flat index +1
+      oldToNew[oldId] = `A${aCounter++}`;
+    }
+    for (let c = leftCols; c < leftCols + rightCols; c++) {
+      const oldId = r * (leftCols + rightCols) + c + 1;
+      oldToNew[oldId] = `B${bCounter++}`;
+    }
+  }
+
+  // Transform the seat objects in place
+  const newLayout = layoutRows.map((row) =>
+    row.map((seat) => {
+      if (seat && seat.id) {
+        const oldId = Number(seat.id);
+        if (!isNaN(oldId) && oldToNew[oldId]) {
+          return { ...seat, id: oldToNew[oldId] };
+        }
+      }
+      return seat;
+    })
+  );
+
+  return { newLayout, oldToNew };
+};
+
+// Helper: transform an array of old seat IDs to new ones
+const transformSeatIdArray = (idArray, oldToNew) => {
+  return idArray.map((id) => {
+    const numeric = Number(id);
+    return oldToNew[numeric] || id;
+  });
+};
 
 export default function SeatSelection() {
   const { scheduleId } = useLocalSearchParams();
@@ -35,7 +88,6 @@ export default function SeatSelection() {
   const { showSnackbar } = useContext(UIContext);
   const { selectedSeats, setSelectedSeats } = useContext(BookingContext);
 
-  // Fetch schedule and seat layout
   useEffect(() => {
     if (!scheduleId) return;
 
@@ -48,32 +100,49 @@ export default function SeatSelection() {
         const data = layoutRes.data.data;
 
         let rawLayout = data.seat_layout;
+        let seatRows = [];
+
+        // --- CASE 1: API returns a valid array of seats ---
         if (Array.isArray(rawLayout) && rawLayout.length > 0) {
           if (Array.isArray(rawLayout[0])) {
-            setSeatLayout(rawLayout);
+            seatRows = rawLayout;
           } else {
-            // Convert flat array to rows of 4 seats each
+            // Flat array -> rows of 4
             const rows = [];
             for (let i = 0; i < rawLayout.length; i += 4) {
               rows.push(rawLayout.slice(i, i + 4));
             }
-            setSeatLayout(rows);
+            seatRows = rows;
           }
-        } else {
-          // Fallback dummy layout
+        }
+        // --- CASE 2: Fallback dummy layout (makes testing possible) ---
+        else {
           const dummySeats = Array.from({ length: 40 }, (_, i) => ({
-            id: (i + 1).toString(),
+            id: (i + 1).toString(),                // will be replaced below
             status: i % 7 === 0 ? "women" : "available",
           }));
           const rows = [];
           for (let i = 0; i < dummySeats.length; i += 4) {
             rows.push(dummySeats.slice(i, i + 4));
           }
-          setSeatLayout(rows);
+          seatRows = rows;
         }
 
-        setLockedSeats(data.locked_seats || []);
-        setBookedSeats(data.booked_seats || []);
+        // --- TRANSFORM to A / B naming ---
+        if (seatRows.length > 0) {
+          const { newLayout, oldToNew } = transformSeatIds(seatRows);
+          setSeatLayout(newLayout);
+
+          // Also transform the locked/booked arrays from the API
+          const lockedRaw = data.locked_seats || [];
+          const bookedRaw = data.booked_seats || [];
+          setLockedSeats(transformSeatIdArray(lockedRaw, oldToNew));
+          setBookedSeats(transformSeatIdArray(bookedRaw, oldToNew));
+        } else {
+          setSeatLayout([]);
+          setLockedSeats([]);
+          setBookedSeats([]);
+        }
       } catch (err) {
         showSnackbar("Failed to load seat layout", "error");
       } finally {
@@ -83,6 +152,7 @@ export default function SeatSelection() {
 
     fetchData();
 
+    // Socket listeners stay the same
     if (socket) {
       const handleSeatsLocked = (data) => {
         if (data.scheduleId == scheduleId) {
@@ -147,7 +217,13 @@ export default function SeatSelection() {
   };
 
   const renderSeat = (seat, rowIdx, colIdx) => {
-    if (!seat) return <View key={`empty-${rowIdx}-${colIdx}`} style={{ width: SEAT_SIZE, margin: 3 }} />;
+    if (!seat)
+      return (
+        <View
+          key={`empty-${rowIdx}-${colIdx}`}
+          style={{ width: SEAT_SIZE, margin: 3 }}
+        />
+      );
 
     const status = getSeatStatus(seat);
     let bgColor, borderColor, textColor;
@@ -236,18 +312,14 @@ export default function SeatSelection() {
 
   const bottomBarHeight = Platform.OS === "ios" ? 130 : 110;
 
-  // Generate row labels (A, B, C, ...)
-  const rowLabels = seatLayout.map((_, idx) => String.fromCharCode(65 + idx));
-
   return (
     <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
-      {/* Scrollable content includes header and seat map */}
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: bottomBarHeight + 20 }}
       >
-        {/* Header (now inside ScrollView) */}
+        {/* Header */}
         <View className="bg-white px-5 pt-4 pb-3 border-b border-gray-100">
           <View className="flex-row items-center justify-between">
             <TouchableOpacity onPress={() => router.back()} className="p-1">
@@ -263,7 +335,6 @@ export default function SeatSelection() {
             </View>
           </View>
 
-          {/* Journey details */}
           <View className="flex-row justify-between mt-3 bg-gray-50 p-3 rounded-xl">
             <View>
               <Text className="text-[10px] font-bold text-gray-400 uppercase">Departure</Text>
@@ -288,7 +359,6 @@ export default function SeatSelection() {
             </View>
           </View>
 
-          {/* Amenities chips */}
           {amenities.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
               {amenities.map((item, idx) => (
@@ -306,7 +376,6 @@ export default function SeatSelection() {
         {/* Seat Map Card */}
         <View className="px-4 pt-6">
           <View className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            {/* Driver indicator */}
             <View className="items-end mb-3">
               <View className="bg-gray-100 p-2 rounded-lg w-12 items-center">
                 <MaterialCommunityIcons name="steering" size={20} color="#64748b" />
@@ -314,27 +383,24 @@ export default function SeatSelection() {
               </View>
             </View>
 
-            {/* Seat Grid with row labels */}
             {seatLayout.length === 0 ? (
               <View className="py-20 items-center">
                 <Text className="text-gray-400">No seat layout available</Text>
               </View>
             ) : (
               seatLayout.map((row, rowIdx) => (
-                <View key={rowIdx} className="flex-row items-center mb-1">
-                  {/* Row Label */}
-                  <View style={{ width: ROW_LABEL_WIDTH }} className="items-center justify-center">
-                    <Text className="text-xs font-bold text-gray-400">{rowLabels[rowIdx]}</Text>
-                  </View>
-                  {/* Left seats (first 2) */}
+                <View key={rowIdx} className="flex-row items-center justify-center mb-1">
+                  {/* Left seats (A section) */}
                   <View className="flex-row">
                     {row.slice(0, 2).map((seat, colIdx) => renderSeat(seat, rowIdx, colIdx))}
                   </View>
                   {/* Aisle */}
                   <View style={{ width: AISLE_WIDTH }} />
-                  {/* Right seats (last 2) */}
+                  {/* Right seats (B section) */}
                   <View className="flex-row">
-                    {row.slice(2, 4).map((seat, colIdx) => renderSeat(seat, rowIdx, colIdx + 2))}
+                    {row.slice(2, 4).map((seat, colIdx) =>
+                      renderSeat(seat, rowIdx, colIdx + 2)
+                    )}
                   </View>
                 </View>
               ))
@@ -350,11 +416,15 @@ export default function SeatSelection() {
                   { label: "Women-only", bg: "bg-pink-50", border: "border-pink-200", dot: true },
                 ].map((item, idx) => (
                   <View key={idx} className="flex-row items-center mr-3 mb-2">
-                    <View className={`w-5 h-5 rounded-md ${item.bg} border ${item.border} items-center justify-center`}>
+                    <View
+                      className={`w-5 h-5 rounded-md ${item.bg} border ${item.border} items-center justify-center`}
+                    >
                       {item.cross && (
                         <View className="w-3 h-px bg-gray-400 rotate-45 absolute" />
                       )}
-                      {item.dot && <View className="w-1.5 h-1.5 rounded-full bg-pink-500 absolute top-0.5 right-0.5" />}
+                      {item.dot && (
+                        <View className="w-1.5 h-1.5 rounded-full bg-pink-500 absolute top-0.5 right-0.5" />
+                      )}
                     </View>
                     <Text className="text-[11px] text-gray-500 ml-1.5">{item.label}</Text>
                   </View>
@@ -391,7 +461,9 @@ export default function SeatSelection() {
             <Text className="text-xl font-extrabold text-gray-800">
               NPR {(selectedSeats.length * (scheduleData?.base_price || 0)).toLocaleString()}
             </Text>
-            <Text className="text-[10px] text-gray-400">per seat: NPR {parseInt(scheduleData?.base_price || 0).toLocaleString()}</Text>
+            <Text className="text-[10px] text-gray-400">
+              per seat: NPR {parseInt(scheduleData?.base_price || 0).toLocaleString()}
+            </Text>
           </View>
         </View>
 

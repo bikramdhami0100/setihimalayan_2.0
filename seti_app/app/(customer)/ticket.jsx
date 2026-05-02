@@ -30,7 +30,7 @@ export default function Ticket() {
   });
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8fafc]">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
         <View className="flex-row items-center">

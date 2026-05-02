@@ -144,17 +144,48 @@ export const scheduleUpdateSchema = Joi.object({
 });
 
 // ------------------- Booking Schemas -------------------
+// export const bookingSchema = Joi.object({
+//     schedule_id: Joi.number().integer().required(),
+//     selected_seats: Joi.array().items(Joi.string()).min(1).required(),
+//     passenger_details: Joi.object({
+//         name: Joi.string().required(),
+//         age: Joi.number().integer().min(1).max(120).optional(),
+//         gender: Joi.string().valid('M', 'F', 'Other').optional(),
+//         email: Joi.string().email().optional(),
+//         phone: Joi.string().pattern(/^[0-9]{10}$/).optional()
+//     }).required(),
+//     special_requests: Joi.string().allow('').optional()
+// });
 export const bookingSchema = Joi.object({
-    schedule_id: Joi.number().integer().required(),
-    selected_seats: Joi.array().items(Joi.string()).min(1).required(),
-    passenger_details: Joi.object({
+  schedule_id: Joi.number().integer().required(),
+
+  selected_seats: Joi.array()
+    .items(Joi.string())
+    .min(1)
+    .required(),
+
+  passenger_details: Joi.array()
+    .items(
+      Joi.object({
+        seat_number: Joi.string().required(),
+
         name: Joi.string().required(),
+
         age: Joi.number().integer().min(1).max(120).optional(),
-        gender: Joi.string().valid('M', 'F', 'Other').optional(),
+
+        gender: Joi.string()
+          .valid('Male', 'Female', 'Other') // match your request
+          .optional(),
+
         email: Joi.string().email().optional(),
+
         phone: Joi.string().pattern(/^[0-9]{10}$/).optional()
-    }).required(),
-    special_requests: Joi.string().allow('').optional()
+      })
+    )
+    .min(1)
+    .required(),
+
+  special_requests: Joi.string().allow('').optional()
 });
 
 export const cancelBookingSchema = Joi.object({

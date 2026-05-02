@@ -48,6 +48,7 @@ export default function BookingConfirmation() {
       </SafeAreaView>
     );
   }
+  console.log(currentBooking,"this is current boking")
 
   // Helper variables
   const schedule = currentBooking.schedule_id;
@@ -67,7 +68,7 @@ export default function BookingConfirmation() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8fafc]">
+    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         
         {/* Success Header */}

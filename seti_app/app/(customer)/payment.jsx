@@ -14,6 +14,7 @@ const PAYMENT_METHODS = [
 
 export default function PaymentScreen() {
   const { bookingId, amount, reference } = useLocalSearchParams();
+  console.log(bookingId,amount,reference,"these are params")
   const [selectedMethod, setSelectedMethod] = useState('esewa');
   const [isProcessing, setIsProcessing] = useState(false);
   const { showSnackbar } = useContext(UIContext);
@@ -22,7 +23,8 @@ export default function PaymentScreen() {
     setIsProcessing(true);
     try {
       const response = await initiatePayment(bookingId, selectedMethod);
-      const { payment_url, transaction_id } = response.data.data;
+      console.log(response,"this is response")
+      const { payment_url, transaction_id,payment_transaction_id } = response.data.data;
       
       // In a real app, we would open a WebView here.
       // For this demo, we'll simulate a successful payment.
@@ -31,7 +33,7 @@ export default function PaymentScreen() {
       setTimeout(() => {
         setIsProcessing(false);
         showSnackbar("Payment successful!", "success");
-        router.replace({
+        router.push({
           pathname: "/(customer)/booking-confirmation",
           params: { bookingReference: reference }
         });
@@ -44,7 +46,7 @@ export default function PaymentScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#f8fafc]">
+    <SafeAreaView style={{flex: 1}} className="flex-1 bg-[#f8fafc]">
       <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">
         <TouchableOpacity onPress={() => router.back()} className="mr-3">
           <Ionicons name="arrow-back" size={24} color="#0f172a" />
