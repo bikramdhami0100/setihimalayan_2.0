@@ -117,3 +117,4 @@
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-05-02 21:58:56"}
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-05-02 21:59:56"}
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-05-02 22:00:56"}
+{"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-05-02 22:01:56"}
