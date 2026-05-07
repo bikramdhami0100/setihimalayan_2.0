@@ -43,76 +43,52 @@ export const initiateEsewaPayment = async (amount, bookingRef, productName, txId
 };
 
 /**
- * Verify eSewa payment with actual API call
- * @param {Object} params - Verification parameters { amt, pid, rid }
- * @returns {Promise<{success: boolean, transaction_id?: string, error?: string}>}
+ * Verify eSewa payment by calling eSewa’s verification API.
+ * @param {Object} params - { total_amount, transaction_uuid, product_code }
  */
 export const verifyEsewaPayment = async (params) => {
     try {
         const { total_amount, transaction_uuid, product_code } = params;
-        
 
-        // Validate required parameters
         if (!total_amount || !transaction_uuid || !product_code) {
             logger.error(`Invalid eSewa verification params: ${JSON.stringify(params)}`);
-            return { 
-                success: false, 
-                error: 'Missing verification parameters (amt, pid, rid)'
+            return { success: false, error: 'Missing verification parameters' };
+        }
+
+        // eSewa verification endpoint (UAT)
+        const verificationUrl = `${process.env.ESEWA_VERIFICATION_URL}?product_code=${product_code}&total_amount=${total_amount}&transaction_uuid=${transaction_uuid}`;
+
+        const response = await axios.get(verificationUrl, {
+            timeout: 10000,
+            headers: { 'Accept': 'application/json' }
+        });
+
+        const data = response.data;
+        logger.info(`eSewa verification response: ${JSON.stringify(data)}`);
+
+        // Expected response: { status: "COMPLETE", ref_id: "...", ... }
+        if (data && data.status === 'COMPLETE') {
+            return {
+                success: true,
+                transaction_id: data.ref_id || data.transaction_code,
+                raw_response: data
+            };
+        } else {
+            return {
+                success: false,
+                error: data?.status || 'Payment not verified by eSewa',
+                raw_response: data
             };
         }
-        
-        // if (!process.env.ESEWA_MERCHANT_CODE) {
-        //     logger.error(`ESEWA_MERCHANT_CODE not configured in environment`);
-        //     return { 
-        //         success: false, 
-        //         error: 'eSewa merchant code not configured' 
-        //     };
-        // }
-        
-        // eSewa verification endpoint (UAT)
-        // For production: https://esewa.com.np/epay/transrec
-        const verificationUrl = `${process.env.ESEWA_VERIFICATION_URL}?product_code=${product_code}&total_amount=${total_amount}&transaction_uuid=${transaction_uuid}`||'https://rc.esewa.com.np/api/epay/transaction/status/?product_code=EPAYTEST&total_amount=100&transaction_uuid=123';
-        
-        logger.info(`Sending verification request to: ${verificationUrl}`);
-        
-        // eSewa expects form-data with POST request
-        const formData = new URLSearchParams();
-        formData.append('total_amount', total_amount);
-        formData.append('transaction_uuid', transaction_uuid);
-        formData.append('product_code', product_code);
-        // formData.append('scd', process.env.ESEWA_MERCHANT_CODE);
-        
-        const response = await axios.post(verificationUrl, formData, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            timeout: 15000
-        });
-        
-        // logger.info(`eSewa verification response: ${JSON.stringify(response.data)}`);
-        
-        // Parse eSewa response
-        // eSewa returns success=true (as string) for successful transactions
-        // const responseData = response.data;
-//           {
-//   "product_code": "EPAYTEST",
-//   "transaction_uuid": "123",
-//   "total_amount": 100.0
-//   "status": "COMPLETE",
-//   "ref_id": "0001TS9"
-// }
-         console.log(response.data);
-         successResponse(response.data, 'Payment successful', response.data); 
-        // if (response.data.status === 'COMPLETE') {
-        //     return { success: true, transaction_id: response.data.ref_id };
-        // }
-        // return { success: false, error: 'Payment not completed' };
-    } catch (err){
-        console.log(err);
-         errorResponse(err, 'Payment verification failed', 400);
+    } catch (err) {
+        logger.error(`eSewa verification error: ${err.message}`);
+        return {
+            success: false,
+            error: err.response?.data?.message || err.message
+        };
     }
-        
 };
+
 
 /**
  * Initiate Khalti payment (stub – real integration uses Khalti API)

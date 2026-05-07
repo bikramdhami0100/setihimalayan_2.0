@@ -104,7 +104,7 @@ export default function CustomerLayout() {
         <Drawer.Screen name="search-results" options={{ drawerItemStyle: { display: 'none' }, title: "Search Results" }} />
         <Drawer.Screen name="seat-selection" options={{ drawerItemStyle: { display: 'none' }, title: "Select Seats" }} />
         <Drawer.Screen name="passenger-details" options={{ drawerItemStyle: { display: 'none' }, title: "Passenger Details" }} />
-        <Drawer.Screen name="booking-confirmation" options={{ drawerItemStyle: { display: 'none' }, title: "Confirmation" }} />
+        <Drawer.Screen  name="booking-confirmation" options={{ drawerItemStyle: { display: 'none' }, title: "Confirmation" }} />
         <Drawer.Screen name="booking-detail" options={{ drawerItemStyle: { display: 'none' }, title: "Booking Details" }} />
         <Drawer.Screen name="privacy-policy" options={{ drawerItemStyle: { display: 'none' }, title: "Privacy Policy" }} />
         <Drawer.Screen name="ticket" options={{ drawerItemStyle: { display: 'none' }, title: "E-Ticket" }} />

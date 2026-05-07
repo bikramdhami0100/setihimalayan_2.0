@@ -6,7 +6,8 @@ import {
     getBookingDetails,
     cancelBooking,
     downloadTicket,
-    getAllBookings
+    getAllBookings,
+    getBookingById
 } from '../controllers/bookingController.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate, bookingSchema, cancelBookingSchema } from '../middleware/validation.js';
@@ -23,6 +24,9 @@ router.post('/:booking_id/confirm', simpleAudit('CONFIRM', 'booking'), confirmBo
 router.get('/my-bookings', getUserBookings);
 router.get('/reference/:reference', getBookingDetails);
 router.post('/:reference/cancel', validate(cancelBookingSchema), simpleAudit('CANCEL', 'booking'), cancelBooking);
+// get booking by id 
+// export const getBookingByReference = (reference) => api.get(`/bookings/reference/${reference}`);
+router.get("/:id", getBookingById);
 router.get('/:reference/ticket', downloadTicket);
 router.get("/",    authenticate, getAllBookings); // Admin route to get all bookings with pagination and search
 // Additional admin routes for booking management can be added here (e.g., update, delete)

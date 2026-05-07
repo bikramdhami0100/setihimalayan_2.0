@@ -13,9 +13,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
 import { initiatePayment, getPaymentStatus } from "../../api/payments";
 import { UIContext } from "../../context/UIContext";
-import axios from "axios";
-import { getAccessToken } from "../../utils/storage";
-import { getBookingByReference } from "../../api/bookings";
 
 const PAYMENT_METHODS = [
   { id: "esewa", name: "eSewa", color: "#60bb46" },
@@ -28,117 +25,152 @@ export default function PaymentScreen() {
   const [selectedMethod, setSelectedMethod] = useState("esewa");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
-  const [paymentUrl, setPaymentUrl] = useState(null);
   const [paymentTransactionId, setPaymentTransactionId] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const webViewRef = useRef(null);
   const [esewaFormData, setEsewaFormData] = useState(null);
   const statusCheckIntervalRef = useRef(null);
   const { showSnackbar } = useContext(UIContext);
-  // get the number of booking seats
 
-
-  // Handle WebView navigation (native only)
-  const handleWebViewNavigationStateChange = (newNavState) => {
-    const url = newNavState.url;
-    console.log("WebView URL:", url);
-
-    if (url.includes("/esewa/success") || url.includes("/payment/success")) {
-      console.log("✅ Payment Success Detected!");
-      setShowWebView(false);
-      setIsVerifying(true);
-      startPolling(paymentTransactionId);
-    } else if (url.includes("/esewa/failure") || url.includes("/payment/failure")) {
-      console.log("❌ Payment Failure Detected!");
-      clearPolling();
-      setShowWebView(false);
-      showSnackbar("❌ Payment cancelled or failed", "error");
+  // ---------- Polling Helpers ----------
+  const clearPolling = () => {
+    if (statusCheckIntervalRef.current) {
+      clearInterval(statusCheckIntervalRef.current);
+      statusCheckIntervalRef.current = null;
     }
   };
 
+  const startPolling = (txnId) => {
+    if (!txnId) return;
+    clearPolling(); // ensure no duplicate intervals
+    setIsVerifying(true);
+
+    statusCheckIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await getPaymentStatus(txnId);
+        const { status, booking_status } = response.data.data;
+
+        if (status === "success") {
+          clearPolling();
+          setIsVerifying(false);
+          showSnackbar("✅ Payment successful! Booking confirmed.", "success");
+          // Navigate to booking confirmation screen
+          router.replace(`/booking/${bookingId}/confirmation`);
+        } else if (status === "failed") {
+          clearPolling();
+          setIsVerifying(false);
+          showSnackbar("❌ Payment failed. Please try again.", "error");
+          router.back();
+        } else if (status === "pending_verification") {
+          // still waiting – keep polling
+          console.log("⏳ Waiting for payment verification...");
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+        // Don't stop polling on network error – retry
+      }
+    }, 3000); // poll every 3 seconds
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => clearPolling();
+  }, []);
+
+  // ---------- Handle eSewa WebView navigation (native only) ----------
+  const handleWebViewNavigationStateChange = (navState) => {
+    const url = navState.url;
+    console.log("WebView URL:", url);
+
+    // Detect backend success/failure endpoints
+    if (url.includes("/payments/success/")) {
+      console.log("✅ Payment Success Detected in WebView!");
+      setShowWebView(false);
+      startPolling(paymentTransactionId);
+    } else if (url.includes("/payments/failure/")) {
+      console.log("❌ Payment Failure Detected in WebView!");
+      clearPolling();
+      setShowWebView(false);
+      showSnackbar("Payment cancelled or failed.", "error");
+      router.back();
+    }
+  };
+
+  // ---------- Generate HTML form for eSewa (used in WebView & web fallback) ----------
+  const getEsewaHtml = (formData) => `
+    <html>
+      <body onload="document.forms[0].submit()">
+        <form action="https://rc-epay.esewa.com.np/api/epay/main/v2/form" method="POST">
+          ${Object.keys(formData)
+            .map(key => `<input type="hidden" name="${key}" value="${formData[key]}" />`)
+            .join("")}
+        </form>
+        <p style="text-align:center; margin-top:50px;">Redirecting to eSewa...</p>
+      </body>
+    </html>
+  `;
+
+  // ---------- Initiate Payment ----------
   const handlePayment = async () => {
     setIsProcessing(true);
-  
-    
     try {
       const response = await initiatePayment(bookingId, selectedMethod);
-        // const {amount,failure_url,product_code,product_delivery_charge,signature,signed_field_names,success_url,transaction_uuid,tax_amount,total_amount,transaction_id}=response?.data?.data?.esewaResult;
-      const esewaData = response?.data?.data?.esewaResult;
-       setEsewaFormData(esewaData);
+      const { esewaResult, khaltiResult, connectResult } = response.data.data;
+
       if (selectedMethod === "esewa") {
-        
-        // Platform-specific handling
+        const formData = esewaResult;
+        setEsewaFormData(formData);
+        // The transaction_uuid is our internal payment_transaction.id
+        setPaymentTransactionId(formData.transaction_uuid);
+
         if (Platform.OS === "web") {
-          // Web: open in new tab
-           const form = document.createElement("form");
-
-           
-               form.method = "POST";
-               form.action =
-                 "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
-           
-               Object.keys(esewaData).forEach((key) => {
-           
-                 const input = document.createElement("input");
-           
-                 input.type = "hidden";
-                 input.name = key;
-                 input.value = esewaData[key];
-           
-                 form.appendChild(input);
-               });
-           
-               document.body.appendChild(form);
-           
-               form.submit();
+          // Web: dynamically create and submit a form (opens eSewa in same tab)
+          const form = document.createElement("form");
+          form.method = "POST";
+          form.action = "https://rc-epay.esewa.com.np/api/epay/main/v2/form";
+          Object.keys(formData).forEach(key => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = key;
+            input.value = formData[key];
+            form.appendChild(input);
+          });
+          document.body.appendChild(form);
+          form.submit();
+          // After submission, the page leaves – no further action here.
+          // The user will be redirected back via backend success/failure endpoints.
           setIsProcessing(false);
-          startPolling(payment_transaction_id);
-          showSnackbar("Payment opened in new tab. Complete it there.", "info");
+          // Polling will start after user returns to the app (we'll handle on mount via URL params if needed)
+          // For simplicity, we rely on the backend redirecting to a frontend result screen.
+          // Alternatively, you can listen to page visibility API – but not necessary for functional flow.
         } else {
-          // Native: use WebView
-      //      setPaymentUrl(
-      //     "https://rc-epay.esewa.com.np/api/epay/main/v2/form"
-      //  );
-
-    setPaymentTransactionId(
-      esewaData.transaction_uuid
-    );
-
-    // setEsewaFormData(esewaData);
+          // Mobile: show WebView with auto-submit HTML
           setShowWebView(true);
-          // Fallback polling after 5 seconds (if WebView callback misses)
-          // setTimeout(() => {
-          //   if (showWebView && paymentTransactionId === payment_transaction_id) {
-          //     startPolling(payment_transaction_id);
-          //   }
-          // }, 5000);
+          // Polling will start after WebView detects success/failure navigation
         }
       } else if (selectedMethod === "khalti") {
         showSnackbar("Khalti payment coming soon", "info");
-        setIsProcessing(false);
       } else if (selectedMethod === "connectips") {
         showSnackbar("ConnectIPS payment coming soon", "info");
-        setIsProcessing(false);
       }
     } catch (err) {
       console.error("Payment error:", err);
       showSnackbar(err.response?.data?.message || "Payment initiation failed", "error");
+    } finally {
       setIsProcessing(false);
     }
   };
 
-
-
-  // ----- WebView for native platforms only -----
-  if ( esewaFormData && showWebView && paymentUrl && Platform.OS !== "web") {
+  // ---------- WebView Render (mobile only) ----------
+  if (esewaFormData && showWebView && Platform.OS !== "web") {
     return (
-      <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-white">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
         <View className="flex-row items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
           <Text className="text-[#0f172a] text-lg font-bold">eSewa Payment</Text>
           <TouchableOpacity
             onPress={() => {
               setShowWebView(false);
               clearPolling();
+              router.back();
             }}
             className="p-2"
           >
@@ -147,41 +179,9 @@ export default function PaymentScreen() {
         </View>
 
         <WebView
-          ref={webViewRef}
           originWhitelist={["*"]}
-          source={{ 
-             html:`
-              <html>
-        <body onload="document.forms[0].submit()">
-          <form
-            action="https://rc-epay.esewa.com.np/api/epay/main/v2/form"
-            method="POST"
-          >
-            ${Object.keys(esewaFormData || {})
-              .map(
-                key => `
-                  <input
-                    type="hidden"
-                    name="${key}"
-                    value="${esewaFormData[key]}"
-                  />
-                `
-              )
-              .join("")}
-          </form>
-        </body>
-      </html>
-             `
-           }}
+          source={{ html: getEsewaHtml(esewaFormData) }}
           onNavigationStateChange={handleWebViewNavigationStateChange}
-
-          // startInLoadingState={true}
-          // renderLoading={() => (
-          //   <View className="flex-1 items-center justify-center">
-          //     <ActivityIndicator size="large" color="#0f172a" />
-          //     <Text className="mt-4 text-gray-500">Loading eSewa...</Text>
-          //   </View>
-          // )}
           startInLoadingState={true}
           javaScriptEnabled={true}
           domStorageEnabled={true}
@@ -197,7 +197,7 @@ export default function PaymentScreen() {
     );
   }
 
-  // ----- Main UI (shared across all platforms) -----
+  // ---------- Main Payment UI ----------
   return (
     <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
       <View className="flex-row items-center px-4 py-3 bg-white border-b border-gray-100">

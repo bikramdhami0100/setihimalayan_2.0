@@ -145,7 +145,20 @@ export const getBookingDetails = async (req, res, next) => {
         next(err);
     }
 };
-
+export const getBookingById = async (req, res, next) => {
+    try {
+        const booking = await Booking.findById(req.params.id);
+        if (!booking) return errorResponse(res, 'Booking not found', 404);
+        
+        if (booking.user_id !== req.user.id && req.user.role === 'passenger') {
+            return errorResponse(res, 'Unauthorized', 403);
+        }
+        
+        successResponse(res, 'Booking details', { booking });
+    } catch (err) {
+        next(err);
+    }
+}
 export const cancelBooking = async (req, res, next) => {
     try {
         const booking = await Booking.findByReference(req.params.reference);

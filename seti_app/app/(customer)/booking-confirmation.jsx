@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useBookings } from "../../hooks/useBookings";
 import dayjs from "dayjs";
-import { Platform } from "react-native";
 import BusMapView from "../../components/BusMapView";
-
-const { width } = Dimensions.get("window");
 
 export default function BookingConfirmation() {
   const { bookingReference } = useLocalSearchParams();
@@ -48,18 +45,17 @@ export default function BookingConfirmation() {
       </SafeAreaView>
     );
   }
-  console.log(currentBooking,"this is current boking")
 
-  // Helper variables
-  const schedule = currentBooking.schedule_id;
-  const isPopulated = typeof schedule === 'object' && schedule !== null;
-  const origin = isPopulated ? schedule.route_id?.origin : "Kathmandu";
-  const destination = isPopulated ? schedule.route_id?.destination : "Pokhara";
-  const departureTime = isPopulated ? dayjs(schedule.departure_time) : dayjs();
-  const arrivalTime = isPopulated ? dayjs(schedule.arrival_time) : dayjs().add(5, 'hours');
-  const busType = isPopulated ? schedule.bus_id?.bus_type : "AC Deluxe";
+  // Use direct fields from the flattened booking object
+  const origin = currentBooking.origin || "Kathmandu";
+  const destination = currentBooking.destination || "Pokhara";
+  const departureTime = currentBooking.departure_time ? dayjs(currentBooking.departure_time) : dayjs();
+  const arrivalTime = currentBooking.arrival_time ? dayjs(currentBooking.arrival_time) : dayjs();
+  const busType = currentBooking.bus_type || "Standard";
+  const bookingRef = currentBooking.booking_reference || currentBooking.reference_number;
+  const totalAmount = currentBooking.total_amount;
+  const selectedSeats = currentBooking.selected_seats || [];
 
-  // Mock coordinates for Kathmandu/Kalanki for the map
   const region = {
     latitude: 27.6946,
     longitude: 85.2818,
@@ -70,7 +66,6 @@ export default function BookingConfirmation() {
   return (
     <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        
         {/* Success Header */}
         <View className="bg-[#0f172a] pt-12 pb-24 px-6 items-center">
           <View className="w-20 h-20 bg-[#38bdf8] rounded-full items-center justify-center mb-4 shadow-lg shadow-sky-400">
@@ -86,7 +81,7 @@ export default function BookingConfirmation() {
             <View className="flex-row justify-between items-center mb-6">
               <View>
                 <Text className="text-gray-400 text-[10px] font-bold tracking-widest uppercase mb-1">Booking Ref</Text>
-                <Text className="text-[#0f172a] text-lg font-black">{currentBooking.reference_number}</Text>
+                <Text className="text-[#0f172a] text-lg font-black">{bookingRef}</Text>
               </View>
               <View className="bg-sky-50 px-3 py-1.5 rounded-full border border-sky-100">
                 <Text className="text-sky-600 text-[10px] font-black uppercase">Confirmed</Text>
@@ -118,7 +113,7 @@ export default function BookingConfirmation() {
               <View>
                 <Text className="text-gray-400 text-[9px] font-bold tracking-widest uppercase mb-1">Seats</Text>
                 <Text className="text-gray-800 text-sm font-bold">
-                  {Array.isArray(currentBooking.selected_seats) ? currentBooking.selected_seats.join(', ') : currentBooking.selected_seats}
+                  {selectedSeats.join(', ')}
                 </Text>
               </View>
               <View className="items-center">
@@ -127,20 +122,19 @@ export default function BookingConfirmation() {
               </View>
               <View className="items-end">
                 <Text className="text-gray-400 text-[9px] font-bold tracking-widest uppercase mb-1">Total Paid</Text>
-                <Text className="text-[#f97316] text-sm font-black">NPR {currentBooking.total_amount}</Text>
+                <Text className="text-[#f97316] text-sm font-black">NPR {totalAmount}</Text>
               </View>
             </View>
 
             <TouchableOpacity 
               className="bg-[#0f172a] rounded-2xl py-4 items-center flex-row justify-center shadow-lg shadow-slate-300"
-              onPress={() => router.push({ pathname: "/(customer)/ticket", params: { reference: currentBooking.reference_number } })}
+              onPress={() => router.push({ pathname: "/(customer)/ticket", params: { reference: bookingRef } })}
             >
               <Ionicons name="ticket-outline" size={20} color="white" className="mr-2" />
               <Text className="text-white font-bold ml-2">View E-Ticket</Text>
             </TouchableOpacity>
           </View>
         </View>
-
 
         {/* Map Section */}
         <View className="mx-5 mb-8">
@@ -168,7 +162,6 @@ export default function BookingConfirmation() {
         >
           <Text className="text-gray-500 font-bold">Back to Home</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );

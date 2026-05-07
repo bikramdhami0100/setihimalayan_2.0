@@ -61,27 +61,57 @@ class Booking {
         }
         return rows[0];
     }
+// Inside Booking.js
 
-    static async updateStatus(id, status, extraFields = {}) {
-        const fields = ['status = ?'];
-        const values = [status];
-        if (status === 'confirmed') {
-            fields.push('confirmed_at = NOW()');
-        }
-        if (status === 'cancelled') {
-            fields.push('cancelled_at = NOW()');
-        }
-        for (const [key, value] of Object.entries(extraFields)) {
-            fields.push(`${key} = ?`);
-            values.push(value);
-        }
-        values.push(id);
-        await pool.execute(
-            `UPDATE bookings SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`,
-            values
-        );
+static async updateStatus(id, status, updateData = {}) {
+    // Explicitly handle known fields to avoid "0 = ?, 1 = ?" errors
+    const fields = ['status = ?'];
+    const values = [status];
+
+    if (updateData.cancellation_reason !== undefined) {
+        fields.push('cancellation_reason = ?');
+        values.push(updateData.cancellation_reason);
     }
+    if (updateData.refund_amount !== undefined) {
+        fields.push('refund_amount = ?');
+        values.push(updateData.refund_amount);
+    }
+    if (updateData.cancelled_at !== undefined) {
+        fields.push('cancelled_at = ?');
+        values.push(updateData.cancelled_at);
+    }
+    if (updateData.confirmed_at !== undefined) {
+        fields.push('confirmed_at = ?');
+        values.push(updateData.confirmed_at);
+    }
+    if (updateData.payment_reference !== undefined) {
+        fields.push('payment_reference = ?');
+        values.push(updateData.payment_reference);
+    }
+    if (updateData.seat_lock_expires_at !== undefined) {
+        fields.push('seat_lock_expires_at = ?');
+        values.push(updateData.seat_lock_expires_at);
+    }
+    // Add any other fields you might update (e.g., ticket_downloaded, etc.)
 
+    values.push(id);
+    const query = `UPDATE bookings SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
+    
+    console.log('Booking updateStatus query:', query);
+    console.log('Values:', values);
+    
+    await pool.execute(query, values);
+    return this.findById(id);
+}
+
+static async cancelBooking(id, reason, refundAmount = null) {
+    // Pass an OBJECT as the third argument to updateStatus
+    return this.updateStatus(id, 'cancelled', {
+        cancellation_reason: reason,
+        refund_amount: refundAmount,
+        cancelled_at: new Date()
+    });
+}
     static async getUserBookings(userId, limit = 10, offset = 0) {
         const [rows] = await pool.execute(
             `SELECT b.id, b.booking_reference, b.total_amount, b.status, b.created_at,
@@ -97,26 +127,6 @@ class Booking {
         return rows;
     }
 
-    static async cancelBooking(id, reason, refundAmount = null) {
-        const booking = await this.findById(id);
-        if (!booking) throw new Error('Booking not found');
-
-        await pool.execute(
-            `UPDATE bookings SET status = 'cancelled', cancelled_at = NOW(),
-             cancellation_reason = ?, refund_amount = ?, updated_at = NOW()
-             WHERE id = ?`,
-            [reason, refundAmount, id]
-        );
-
-        // Restore seats if booking was confirmed
-        if (booking.status === 'confirmed') {
-            const seatCount = booking.selected_seats.length;
-            await pool.execute(
-                'UPDATE schedules SET available_seats = available_seats + ? WHERE id = ?',
-                [seatCount, booking.schedule_id]
-            );
-        }
-    }
 
     static async markTicketDownloaded(bookingId) {
         await pool.execute(

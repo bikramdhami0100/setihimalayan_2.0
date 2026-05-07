@@ -7,6 +7,148 @@ import logger from '../utils/logger.js';
 import SeatLock from '../models/SeatLock.js';
 import { getIO } from '../config/socket.js';
 // import jwt from "jsonwebtoken";
+// Add this helper at the top of paymentController.js
+const sendRedirectHtml = (res, url, message) => {
+    const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+         <meta http-equiv="refresh" content="0;url=${url}">
+        <title>Payment Redirect</title></head>
+        <body onload="window.location.href = '${url}';" style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif;">
+            <div style="text-align:center;">
+                <h3>${message}</h3>
+                <p>Redirecting you back to the app...</p>
+                <script>window.location.href = "${url}";</script>
+            </div>
+        </body>
+        </html>
+    `;
+    res.send(html);
+};
+
+export const paymentSuccess = async (req, res, next) => {
+  try {
+    const { payment_transaction_id } = req.params;
+    const { data } = req.query;
+
+    if (!payment_transaction_id || !data) {
+      return sendRedirectHtml(
+        res,
+        `${process.env.FRONTEND_URL}/payment/result?status=failed&message=Missing parameters`,
+        "Missing payment information"
+      );
+    }
+
+    // Decode base64 response from eSewa
+    let decodedData;
+    try {
+      const jsonString = Buffer.from(data, 'base64').toString('utf-8');
+      decodedData = JSON.parse(jsonString);
+    } catch (err) {
+      return sendRedirectHtml(
+        res,
+        `${process.env.FRONTEND_URL}/payment/result?status=failed&message=Invalid response data`,
+        "Invalid eSewa response"
+      );
+    }
+
+    // Find transaction
+    const tx = await PaymentTransaction.findById(payment_transaction_id);
+    if (!tx) {
+      return sendRedirectHtml(
+        res,
+        `${process.env.FRONTEND_URL}/payment/result?status=failed&message=Transaction not found`,
+        "Payment record not found"
+      );
+    }
+
+    // Check eSewa status
+    if (decodedData.status !== 'COMPLETE') {
+      await PaymentTransaction.updateStatus(tx.id, 'failed', {
+        response_payload: decodedData,
+        error_message: 'Payment not completed by user',
+      });
+      return sendRedirectHtml(
+        res,
+        `${process.env.FRONTEND_URL}/payment/result?status=failed&message=Payment incomplete`,
+        "Payment was not completed"
+      );
+    }
+
+    // Verify with eSewa API
+    const verification = await verifyEsewaPayment({
+      total_amount: decodedData.total_amount,
+      transaction_uuid: decodedData.transaction_uuid,
+      product_code: decodedData.product_code,
+    });
+    // console.log(verification,"verification ok");
+    // return 0
+
+    if (!verification) {
+      await PaymentTransaction.updateStatus(tx.id, 'failed', {
+        response_payload: verification,
+        error_message: verification.error,
+      });
+      return sendRedirectHtml(
+        res,
+        `${process.env.FRONTEND_URL}/payment/result?status=failed&message=Verification failed`,
+        "Payment verification failed"
+      );
+    }
+
+    // Update transaction as success
+    await PaymentTransaction.updateStatus(tx.id, 'success', {
+      transaction_id: decodedData.transaction_code,
+      response_payload: decodedData,
+    });
+
+    
+        // Confirm booking – handle already confirmed case
+        const booking = await Booking.findById(tx.booking_id);
+        if (booking.status === 'confirmed') {
+            console.log(`Booking ${booking.id} already confirmed – skipping confirmation.`);
+        } else if (booking.status === 'pending_payment') {
+            await confirmBookingAfterPayment(tx.booking_id, verification);
+        } else {
+            // Unexpected status, log but still treat as success for user
+            console.warn(`Booking ${booking.id} has status ${booking.status} – not confirming again.`);
+        }
+
+        // Redirect to frontend success page
+        const successUrl = `${process.env.FRONTEND_URL}/payment/result?status=success&payment_transaction_id=${payment_transaction_id}&booking_id=${tx.booking_id}`;
+        console.log(successUrl,"frontend url")
+        sendRedirectHtml(res, successUrl, "Payment successful!");
+
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const paymentFailure = async (req, res, next) => {
+  try {
+    const { payment_transaction_id } = req.params;
+    if (payment_transaction_id) {
+      const tx = await PaymentTransaction.findById(payment_transaction_id);
+      if (tx) {
+        await PaymentTransaction.updateStatus(payment_transaction_id,
+             'failed', {
+          error_message: 'User cancelled or payment failed',
+        });
+        // Release seat locks
+        const booking = await Booking.findById(tx.booking_id);
+        if (booking && booking.status === 'pending_payment') {
+          await SeatLock.releaseAllByBooking(booking.id);
+          await Booking.updateStatus(booking.id, 'cancelled', 'Payment cancelled by user');
+        }
+      }
+    }
+    const failUrl = `${process.env.FRONTEND_URL}/payment/result?status=failed&message=Payment cancelled`;
+    sendRedirectHtml(res, failUrl, "Payment cancelled or failed");
+  } catch (err) {
+    next(err);
+  }
+};
 async function bookingCancelPaymentFailure  (bookingReference,cancellation_reason)  {
        try {
         const booking = await Booking.findByReference(bookingReference);
@@ -109,130 +251,6 @@ export const initiatePayment = async (req, res, next) => {
         }
         
         successResponse(res, 'Payment initiated', {esewaResult, khaltiResult, connectResult});
-    } catch (err) {
-        next(err);
-    }
-};
-
-
-export const paymentSuccess = async (req, res, next) => {
-    try {
-        const { payment_transaction_id } = req.params;
-        const { data } = req.query;
-         
-        if (!payment_transaction_id) {
-            return errorResponse(res, 'Missing payment transaction ID', 400);
-        }
-
-        if (!data) {
-            return errorResponse(res, 'Missing eSewa response data', 400);
-        }
-
-        // Decode base64 response from eSewa
-        let decodedData;
-
-        try {
-            const jsonString = Buffer.from(data, 'base64').toString('utf-8');
-            decodedData = JSON.parse(jsonString);
-        } catch (err) {
-            return errorResponse(res, 'Invalid eSewa response data', 400);
-        }
-
-        console.log('Decoded eSewa Response:', decodedData);
-
-        /**
-         * Example decoded data:
-         * {
-         *   transaction_code: '000F688',
-         *   status: 'COMPLETE',
-         *   total_amount: '2400.0',
-         *   transaction_uuid: 'ESEWA_xxx',
-         *   product_code: 'EPAYTEST',
-         *   signature: 'xxxx'
-         * }
-         */
-
-        // Find transaction from DB
-        const tx = await PaymentTransaction.findById(payment_transaction_id);
-
-        if (!tx) {
-            return errorResponse(res, 'Payment transaction not found', 404);
-        }
-
-        // Verify payment status
-        if (decodedData.status !== 'COMPLETE') {
-
-            await PaymentTransaction.updateStatus(tx.id, 'failed', {
-                response_payload: decodedData,
-                error_message: 'Payment not completed'
-            });
-
-            return errorResponse(res, 'Payment failed', 400);
-        }
-
-        // Verify payment with eSewa API
-        const verification = await verifyEsewaPayment({
-            total_amount: decodedData.total_amount,
-            transaction_uuid: decodedData.transaction_uuid,
-            product_code: decodedData.product_code
-        });
-
-        if (!verification.success) {
-
-            await PaymentTransaction.updateStatus(tx.id, 'failed', {
-                response_payload: verification,
-                error_message: verification.error
-            });
-
-            return errorResponse(
-                res,
-                `Payment verification failed: ${verification.error}`,
-                400
-            );
-        }
-
-        // Update payment transaction
-        await PaymentTransaction.updateStatus(tx.id, 'success', {
-            transaction_id: decodedData.transaction_code,
-            response_payload: decodedData
-        });
-
-        // Confirm booking
-        await confirmBookingAfterPayment(tx.booking_id, verification);
-
-        return successResponse(
-            res,
-            'Payment successful, booking confirmed',
-            {
-                payment_transaction_id: tx.id,
-                booking_id: tx.booking_id,
-                transaction_code: decodedData.transaction_code,
-                amount: decodedData.total_amount
-            }
-        );
-
-    } catch (err) {
-        next(err);
-    }
-};
-
-
-export const paymentFailure = async (req, res, next) => {
-    try {
-        const { payment_transaction_id } = req.params;
-        // console.log("payment_transaction_id",payment_transaction_id);
-        if (payment_transaction_id) {
-            // console.log(payment_transaction_id,"payment_transaction_id");
-           let data= await PaymentTransaction.updateStatus(payment_transaction_id, 'failed', { error_message: 'User cancelled or payment failed' });
-        //    console.log(data,"data");
-           let bookingReference=JSON.parse(data.request_payload).booking_ref;
-           console.log(bookingReference,"bookingReference");
-            // Cancel booking
-            await bookingCancelPaymentFailure(bookingReference, 'User cancelled or payment failed');
-
-        }
-        
-        errorResponse(res, 'Payment failed or cancelled', 400);
     } catch (err) {
         next(err);
     }

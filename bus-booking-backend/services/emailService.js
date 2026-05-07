@@ -79,12 +79,12 @@ export const sendBookingConfirmation = async (userEmail, booking, pdfBuffer) => 
                     
                     <p>Your e-ticket is attached to this email. You can also download it from your dashboard.</p>
                     <p style="text-align: center;">
-                        <a href="${process.env.FRONTEND_URL}/my-bookings/${booking.booking_reference}" class="button">View Booking</a>
+                        <a href="${process.env.FRONTEND_URL}/(customer)/booking-confirmation.jsx/${booking.booking_reference}" class="button">View Booking</a>
                     </p>
                     <p>Thank you for choosing our service!</p>
                 </div>
                 <div class="footer">
-                    <p>Bus Booking System | Support: support@busbooking.com | +977-1-1234567</p>
+                    <p>Bus Booking System | Support: setiservice@gmail.com | +977-1-1234567</p>
                 </div>
             </div>
         </body>
