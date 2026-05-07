@@ -1,32 +1,169 @@
 import axios from 'axios';
 import logger from '../utils/logger.js';
-
+import CryptoJS from "crypto-js";
 /**
- * Initiate eSewa payment (stub – in production, call actual eSewa API)
+ * Initiate eSewa payment
  * @param {number} amount - Amount in NPR
  * @param {string} bookingRef - Booking reference
  * @param {string} productName - Product name
+ * @param {number} paymentTransactionId - Payment transaction ID for tracking
  * @returns {Promise<{payment_url: string, transaction_id: string|null}>}
  */
-export const initiateEsewaPayment = async (amount, bookingRef, productName) => {
-    // In production: https://uat.esewa.com.np/epay/main
-    const paymentUrl = `https://uat.esewa.com.np/epay/main?amt=${amount}&pdc=0&psc=0&txAmt=0&tAmt=${amount}&pid=${bookingRef}&scd=${process.env.ESEWA_MERCHANT_CODE}&su=${process.env.FRONTEND_URL}/payment/success?gateway=esewa&pu=${encodeURIComponent(process.env.FRONTEND_URL)}&fu=${process.env.FRONTEND_URL}/payment/failure?gateway=esewa`;
-    // Simulate transaction ID
-    const transaction_id = `ESEWA_${Date.now()}_${bookingRef}`;
-    logger.info(`eSewa payment initiated: ${paymentUrl}`);
-    return { payment_url: paymentUrl, transaction_id };
+export const initiateEsewaPayment = async (amount, bookingRef, productName, paymentTransactionId = null) => {
+    try {
+        const transaction_uuid = `ESEWA_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        let hash=CryptoJS.HmacSHA256(
+             `total_amount=${amount},transaction_uuid=${transaction_uuid},product_code=${process.env.ESEWA_MERCHANT_CODE}`,
+            process.env.ESEWA_SECRET_KEY
+        );
+        let signature = CryptoJS.enc.Base64.stringify(hash);
+
+        return { 
+            // payment_response: response.data, 
+      amount:amount,
+      tax_amount:0,
+      total_amount:amount,
+      transaction_uuid:transaction_uuid,
+      product_code:process.env.ESEWA_MERCHANT_CODE,
+      product_service_charge:0,
+      product_delivery_charge:0,
+
+      success_url: `${process.env.ESEWA_SUCCESS_URL}?payment_transaction_id=${paymentTransactionId}`,
+      failure_url: `${process.env.ESEWA_FAILURE_URL}?payment_transaction_id=${paymentTransactionId}`,
+      signed_field_names:
+        "total_amount,transaction_uuid,product_code",
+      signature:signature,
+      transaction_id:paymentTransactionId
+        };
+    } catch (err) {
+        logger.error(`Error initiating eSewa payment: ${err.message}`);
+        throw err;
+    }
 };
 
 /**
- * Verify eSewa payment (stub)
- * @param {Object} params - Verification parameters
+ * Verify eSewa payment with actual API call
+ * @param {Object} params - Verification parameters { amt, pid, rid }
  * @returns {Promise<{success: boolean, transaction_id?: string, error?: string}>}
  */
 export const verifyEsewaPayment = async (params) => {
-    // In production: call eSewa verification API
-    logger.info(`Verifying eSewa payment: ${JSON.stringify(params)}`);
-    // Simulate success
-    return { success: true, transaction_id: params.transaction_id || `TXN_${Date.now()}` };
+    try {
+        const { amt, pid, rid } = params;
+        
+        logger.info(`Starting eSewa payment verification:`);
+        logger.info(`  - Amount: ${amt}`);
+        logger.info(`  - Product ID: ${pid}`);
+        logger.info(`  - Reference ID: ${rid}`);
+        
+        // Validate required parameters
+        if (!amt || !pid || !rid) {
+            logger.error(`Invalid eSewa verification params: ${JSON.stringify(params)}`);
+            return { 
+                success: false, 
+                error: 'Missing verification parameters (amt, pid, rid)'
+            };
+        }
+        
+        if (!process.env.ESEWA_MERCHANT_CODE) {
+            logger.error(`ESEWA_MERCHANT_CODE not configured in environment`);
+            return { 
+                success: false, 
+                error: 'eSewa merchant code not configured' 
+            };
+        }
+        
+        // eSewa verification endpoint (UAT)
+        // For production: https://esewa.com.np/epay/transrec
+        const verificationUrl = 'https://uat.esewa.com.np/epay/transrec';
+        
+        logger.info(`Sending verification request to: ${verificationUrl}`);
+        
+        // eSewa expects form-data with POST request
+        const formData = new URLSearchParams();
+        formData.append('amt', amt);
+        formData.append('pid', pid);
+        formData.append('rid', rid);
+        formData.append('scd', process.env.ESEWA_MERCHANT_CODE);
+        
+        const response = await axios.post(verificationUrl, formData, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            timeout: 15000
+        });
+         console.log(response,"this is response from esewa verification")
+        logger.info(`eSewa verification response status: ${response.status}`);
+        logger.info(`eSewa verification response data: ${JSON.stringify(response.data)}`);
+        
+        // Check response status
+        if (response.status !== 200) {
+            logger.warn(`eSewa returned non-200 status: ${response.status}`);
+            return { 
+                success: false, 
+                error: `eSewa verification failed with status ${response.status}`,
+                refId: rid 
+            };
+        }
+        
+        // Parse eSewa response
+        // eSewa returns success=true (as string) for successful transactions
+        const responseData = response.data;
+        
+        // Handle both string 'true' and boolean true
+        const isSuccess = responseData.success === 'true' || responseData.success === true;
+        
+        if (isSuccess) {
+            logger.info(`✅ eSewa payment verified successfully!`);
+            return {
+                success: true,
+                transaction_id: responseData.transaction_uuid || responseData.transactionUUID || rid,
+                refId: responseData.ref_id || rid,
+                amount: responseData.total_amount || amt,
+                productId: responseData.product_id || pid,
+                responseData: responseData
+            };
+        } else {
+            logger.warn(`❌ eSewa payment verification failed`);
+            logger.warn(`Response data:`, responseData);
+            return { 
+                success: false, 
+                error: responseData.error || responseData.message || 'Payment verification failed',
+                refId: rid,
+                responseData: responseData
+            };
+        }
+    } catch (err) {
+        logger.error(`❌ eSewa verification error: ${err.message}`);
+        logger.error(`Error details:`, {
+            message: err.message,
+            code: err.code,
+            response: err.response?.status,
+            responseData: err.response?.data
+        });
+        
+        // Handle specific error types
+        if (err.code === 'ECONNABORTED') {
+            return { 
+                success: false, 
+                error: 'eSewa verification timeout - request took too long'
+            };
+        } else if (err.code === 'ECONNREFUSED') {
+            return { 
+                success: false, 
+                error: 'Cannot connect to eSewa - network error'
+            };
+        } else if (err.response) {
+            return { 
+                success: false, 
+                error: `eSewa error: ${err.response.status} - ${err.response.statusText}`
+            };
+        }
+        
+        return { 
+            success: false, 
+            error: `Payment verification error: ${err.message}`
+        };
+    }
 };
 
 /**
@@ -38,7 +175,7 @@ export const verifyEsewaPayment = async (params) => {
 export const initiateKhaltiPayment = async (amount, bookingRef) => {
     // Khalti test endpoint
     const payload = {
-        return_url: `${process.env.FRONTEND_URL}/payment/khalti/verify`,
+        return_url: `${process.env.FRONTEND_URL}/payments/khalti/verify`,
         website_url: process.env.FRONTEND_URL,
         amount: amount * 100, // convert to paisa
         purchase_order_id: bookingRef,
