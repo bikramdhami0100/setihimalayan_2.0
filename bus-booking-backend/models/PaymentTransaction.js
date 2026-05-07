@@ -50,6 +50,7 @@ class PaymentTransaction {
              WHERE id = ?`,
             values
         );
+        return this.findById(id);
     }
 
     static async findByBookingId(bookingId) {

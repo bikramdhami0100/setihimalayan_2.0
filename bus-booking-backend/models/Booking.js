@@ -8,7 +8,7 @@ class Booking {
             passenger_details, special_requests, seat_lock_expires_at
         } = bookingData;
 
-        const booking_reference = uuidv4().substring(0, 8).toUpperCase();
+        const booking_reference = `${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`;
 
         const [result] = await pool.execute(
             `INSERT INTO bookings (
