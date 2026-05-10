@@ -699,7 +699,7 @@ export default function AdminBookings() {
     }
   }, [page, limit, searchQuery, sortBy, sortOrder, filters, updatePagination]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { fetchData(); }, [page,limit,searchQuery,sortBy,sortOrder,filters,updatePagination]);
 
   const commitSearch = useCallback((text) => updateSearchQuery("bookings", text), [updateSearchQuery]);
 
