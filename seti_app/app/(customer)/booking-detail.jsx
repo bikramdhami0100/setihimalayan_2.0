@@ -1,10 +1,24 @@
 import React from "react";
-import { View, Text, SafeAreaView } from "react-native";
+import { View, Text, SafeAreaView, StyleSheet } from "react-native";
 
 export default function BookingDetail() {
   return (
-    <SafeAreaView className="flex-1 bg-[#f8fafc] p-4">
-      <Text className="text-xl font-bold text-[#1e3a8a] mb-4">Booking Details</Text>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Booking Details</Text>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E3A8A',
+    marginBottom: 16,
+  },
+});

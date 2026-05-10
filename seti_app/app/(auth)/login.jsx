@@ -38,132 +38,132 @@ export default function Login() {
 
   return (
     <>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+      <View style={styles.container}>
+        <View style={styles.topCircle} />
+        <SafeAreaView style={{ flex: 1 }}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
           >
-            {/* Top Decorative Element */}
-            <View style={styles.topCircle} />
-
-            <View style={styles.headerContainer}>
-              <IconButton
-                icon="bus"
-                size={48}
-                iconColor="#1e3a8a"
-                style={styles.logoIcon}
-              />
-              <Text variant="headlineLarge" style={styles.title}>Seti Himalayan</Text>
-              <Text variant="bodyMedium" style={styles.subtitle}>Premium Bus Travel Experience</Text>
-            </View>
-
-            <Animated.View entering={FadeInUp.duration(800).delay(200)}>
-              <Surface style={styles.card} elevation={1}>
-                <Text variant="headlineSmall" style={styles.cardTitle}>Welcome Back</Text>
-                <Text variant="bodySmall" style={styles.cardSubtitle}>Sign in to your account to manage bookings</Text>
-
-                <TextInput
-                  label="Email Address"
-                  value={email}
-                  onChangeText={setEmail}
-                  mode="outlined"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  left={<TextInput.Icon icon="email" color="#64748b" />}
-                  style={styles.input}
-                  outlineColor="#e2e8f0"
-                  activeOutlineColor="#1e3a8a"
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.headerContainer}>
+                <IconButton
+                  icon="bus"
+                  size={48}
+                  iconColor="#1e3a8a"
+                  style={styles.logoIcon}
                 />
+                <Text variant="headlineLarge" style={styles.title}>Seti Himalayan</Text>
+                <Text variant="bodyMedium" style={styles.subtitle}>Premium Bus Travel Experience</Text>
+              </View>
 
-                <TextInput
-                  label="Password"
-                  value={password}
-                  onChangeText={setPassword}
-                  mode="outlined"
-                  secureTextEntry={!showPassword}
-                  left={<TextInput.Icon icon="lock" color="#64748b" />}
-                  right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} color="#64748b" />}
-                  style={styles.input}
-                  outlineColor="#e2e8f0"
-                  activeOutlineColor="#1e3a8a"
-                />
+              <Animated.View entering={FadeInUp.duration(800).delay(200)}>
+                <Surface style={styles.card} elevation={1}>
+                  <Text variant="headlineSmall" style={styles.cardTitle}>Welcome Back</Text>
+                  <Text variant="bodySmall" style={styles.cardSubtitle}>Sign in to your account to manage bookings</Text>
 
-                <View style={styles.row}>
-                  <View style={styles.rememberMe}>
-                    <Checkbox
-                      status={rememberMe ? 'checked' : 'unchecked'}
-                      onPress={() => setRememberMe(!rememberMe)}
-                      color="#1e3a8a"
-                    />
-                    <Text variant="bodySmall" style={styles.rememberMeText} onPress={() => setRememberMe(!rememberMe)}>Remember me</Text>
+                  <TextInput
+                    label="Email Address"
+                    value={email}
+                    onChangeText={setEmail}
+                    mode="outlined"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    left={<TextInput.Icon icon="email" color="#64748b" />}
+                    style={styles.input}
+                    outlineColor="#e2e8f0"
+                    activeOutlineColor="#1e3a8a"
+                  />
+
+                  <TextInput
+                    label="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    mode="outlined"
+                    secureTextEntry={!showPassword}
+                    left={<TextInput.Icon icon="lock" color="#64748b" />}
+                    right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} color="#64748b" />}
+                    style={styles.input}
+                    outlineColor="#e2e8f0"
+                    activeOutlineColor="#1e3a8a"
+                  />
+
+                  <View style={styles.row}>
+                    <View style={styles.rememberMe}>
+                      <Checkbox
+                        status={rememberMe ? 'checked' : 'unchecked'}
+                        onPress={() => setRememberMe(!rememberMe)}
+                        color="#1e3a8a"
+                      />
+                      <Text variant="bodySmall" style={styles.rememberMeText} onPress={() => setRememberMe(!rememberMe)}>Remember me</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+                      <Text variant="bodySmall" style={styles.forgotText}>Forgot Password?</Text>
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
-                    <Text variant="bodySmall" style={styles.forgotText}>Forgot Password?</Text>
-                  </TouchableOpacity>
-                </View>
 
-                <Button
-                  mode="contained"
-                  onPress={handleLogin}
-                  style={styles.loginButton}
-                  labelStyle={styles.loginButtonLabel}
-                  contentStyle={styles.loginButtonContent}
-                  disabled={isLoading}
-                >
-                  {isLoading ? <ActivityIndicator color="white" /> : "Login"}
-                </Button>
-
-                <View style={styles.dividerContainer}>
-                  <Divider style={styles.divider} />
-                  <Text variant="bodySmall" style={styles.dividerText}>OR CONTINUE WITH</Text>
-                  <Divider style={styles.divider} />
-                </View>
-
-                <View style={styles.socialRow}>
                   <Button
-                    mode="outlined"
-                    icon="google"
-                    style={styles.socialButton}
-                    textColor="#1f2937"
-                    onPress={() => { }}
+                    mode="contained"
+                    onPress={handleLogin}
+                    style={styles.loginButton}
+                    labelStyle={styles.loginButtonLabel}
+                    contentStyle={styles.loginButtonContent}
+                    disabled={isLoading}
                   >
-                    Google
+                    {isLoading ? <ActivityIndicator color="white" /> : "Login"}
                   </Button>
-                  <Button
-                    mode="outlined"
-                    icon="facebook"
-                    style={styles.socialButton}
-                    textColor="#1877f2"
-                    onPress={() => { }}
-                  >
-                    Facebook
-                  </Button>
-                </View>
-              </Surface>
-            </Animated.View>
 
-            <View style={styles.footer}>
-              <Text variant="bodyMedium" style={styles.footerText}>
-                Don't have an account?
-              </Text>
-              <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
-                <Text variant="bodyMedium" style={styles.signUpText}> Sign Up</Text>
-              </TouchableOpacity>
-            </View>
+                  <View style={styles.dividerContainer}>
+                    <Divider style={styles.divider} />
+                    <Text variant="bodySmall" style={styles.dividerText}>OR CONTINUE WITH</Text>
+                    <Divider style={styles.divider} />
+                  </View>
 
-            <View style={styles.securityBadge}>
-              <MaterialCommunityIcons name="shield-check" size={16} color="#0284c7" />
-              <Text style={styles.securityText}>SECURE & ENCRYPTED BOOKING</Text>
-            </View>
+                  <View style={styles.socialRow}>
+                    <Button
+                      mode="outlined"
+                      icon="google"
+                      style={styles.socialButton}
+                      textColor="#1f2937"
+                      onPress={() => { }}
+                    >
+                      Google
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      icon="facebook"
+                      style={styles.socialButton}
+                      textColor="#1877f2"
+                      onPress={() => { }}
+                    >
+                      Facebook
+                    </Button>
+                  </View>
+                </Surface>
+              </Animated.View>
 
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+              <View style={styles.footer}>
+                <Text variant="bodyMedium" style={styles.footerText}>
+                  Don't have an account?
+                </Text>
+                <TouchableOpacity onPress={() => router.push("/(auth)/register")}>
+                  <Text variant="bodyMedium" style={styles.signUpText}> Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.securityBadge}>
+                <MaterialCommunityIcons name="shield-check" size={16} color="#0284c7" />
+                <Text style={styles.securityText}>SECURE & ENCRYPTED BOOKING</Text>
+              </View>
+
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => {
@@ -173,8 +173,10 @@ export default function Login() {
         action={{
           label: 'OK',
           onPress: () => setSnackbarVisible(false),
+          textColor: '#fff',
         }}
-        style={{ backgroundColor: '#1e293b' }}
+        style={{ backgroundColor: '#d32f2f' }}
+        theme={{ colors: { inverseOnSurface: '#ffffff' } }}
       >
         {error}
       </Snackbar>

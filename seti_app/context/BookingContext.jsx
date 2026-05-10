@@ -59,12 +59,13 @@ export const BookingProvider = ({ children }) => {
     setError(null);
     try {
       const response = await bookingsApi.getUserBookings(page, limit);
-      const { data, pagination } = response.data;
-      setUserBookings(data);
-      setTotalBookings(pagination?.total || data.length);
+      const result = response.data.data;
+      const bookings = Array.isArray(result) ? result : (result?.bookings || []);
+      setUserBookings(bookings);
+      setTotalBookings(result?.pagination?.total || bookings.length);
       setCurrentPage(page);
       setIsLoading(false);
-      return { success: true, bookings: data };
+      return { success: true, bookings };
     } catch (err) {
       const message = err.response?.data?.message || 'Failed to fetch bookings';
       setError(message);

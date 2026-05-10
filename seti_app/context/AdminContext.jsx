@@ -4,9 +4,9 @@ import * as bookingApi from '../api/bookings';
 import * as routeApi from '../api/routes';
 import * as scheduleApi from '../api/schedules';
 import * as reportApi from '../api/reports';
-import { getProfile } from '../api/auth'; // For user data if needed or a dedicated user API
-import { getAccessToken } from '../utils/storage';
-import * as usersApi from '../api/users'; // Assuming you have a users API module for admin user management
+import { getProfile } from '../api/auth';
+import * as usersApi from '../api/users';
+import { AuthContext } from './AuthContext';
 
 const AdminContext = createContext();
 
@@ -28,12 +28,12 @@ export function AdminProvider({ children }) {
   const [searchQueries, setSearchQueries] = useState({});
   const [paginations, setPaginations] = useState({});
 
-  // ── Helper: Get/Set Pagination for a specific key
-  const getPagination = (key) => paginations[key] || { page: 0, limit: 10, total: 0 };
+  // ── Helper: Get/Set Pagination for a specific key (1-indexed)
+  const getPagination = (key) => paginations[key] || { page: 1, limit: 10, total: 0 };
   const updatePagination = (key, updates) => {
     setPaginations(prev => ({
       ...prev,
-      [key]: { ...(prev[key] || { page: 0, limit: 10, total: 0 }), ...updates }
+      [key]: { ...(prev[key] || { page: 1, limit: 10, total: 0 }), ...updates }
     }));
   };
 
@@ -41,7 +41,14 @@ export function AdminProvider({ children }) {
   const getSearchQuery = (key) => searchQueries[key] || "";
   const updateSearchQuery = (key, query) => {
     setSearchQueries(prev => ({ ...prev, [key]: query }));
-    updatePagination(key, { page: 0 }); // Reset page on search change
+    updatePagination(key, { page: 1 }); // Reset page on search change
+  };
+
+  // ── Sorting state
+  const [sortConfig, setSortConfig] = useState({});
+  const getSort = (key) => sortConfig[key] || { sortBy: 'created_at', sortOrder: 'DESC' };
+  const updateSort = (key, sortBy, sortOrder) => {
+    setSortConfig(prev => ({ ...prev, [key]: { sortBy, sortOrder } }));
   };
 
   // ── Loading Helpers
@@ -55,9 +62,9 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
   try {
     const { page, limit } = getPagination(key);
     const search = getSearchQuery(key);
-    const res = await usersApi.getUsers({ page: page + 1, limit, search });
+    const res = await usersApi.getUsers({ page, limit, search });
     setUsers(res.data.data.users || []);
-    updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+    updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
   } catch (err) {
     console.error("Failed to fetch users", err);
   }
@@ -73,17 +80,17 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
     try {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
-      const res = await busApi.getBuses({ page: page + 1, limit, search });
-      // // console.log(res,"buses")
+      const { sortBy, sortOrder } = getSort(key);
+      const res = await busApi.getBuses({ page, limit, search, sortBy, sortOrder });
       setBuses(res.data.data.buses || []);
-      updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+      updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
     }catch (err) {
       console.error("Failed to fetch buses", err);
     } finally {
       setKeyLoading(key, false);
       setKeyRefreshing(key, false);
     }
-  }, [paginations.buses, searchQueries.buses]);
+  }, [paginations.buses, searchQueries.buses, sortConfig.buses]);
 
   const fetchBookings = useCallback(async (isRefreshing = false) => {
     const key = 'bookings';
@@ -91,14 +98,9 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
     try {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
-      // get from async storage or native storage if not available in memory, this is just a placeholder
-      // const tokens = await AsyncStorage.getItem('refresh_token_hash'); // Example for React Native
-      // getAccessToken() // Example for native storage utility function
-      let tokensValue = await getAccessToken(); // Fallback to async storage if not in memory
-      // // console.log(tokensValue,"token value")
-      const res = await bookingApi.getAllBookings(tokensValue,{ page: page + 1, limit, search });
+      const res = await bookingApi.getAllBookings({ page, limit, search });
       setBookings(res.data.data.bookings || []);
-      updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+      updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
     } catch (err) {
       console.error("Failed to fetch bookings", err); 
     } finally {
@@ -114,14 +116,15 @@ const fetchRoutes = useCallback(async (isRefreshing = false) => {
   try {
     const { page, limit } = getPagination(key);
     const search = getSearchQuery(key);
-    const res = await routeApi.getRoutes({ page: page + 1, limit, search }); // <-- pass search
+    const { sortBy, sortOrder } = getSort(key);
+    const res = await routeApi.getRoutes({ page, limit, search, sortBy, sortOrder });
     setRoutes(res.data.data.routes || []);
-    updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+    updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
   } finally {
     setKeyLoading(key, false);
     setKeyRefreshing(key, false);
   }
-}, [paginations.routes, searchQueries.routes]);
+}, [paginations.routes, searchQueries.routes, sortConfig.routes]);
 
   const fetchDashboard = useCallback(async () => {
     const key = 'dashboard';
@@ -142,9 +145,9 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
   try {
     const { page, limit } = getPagination(key);
     const search = getSearchQuery(key);
-    const res = await scheduleApi.getSchedules({ page: page + 1, limit, search });
+    const res = await scheduleApi.getSchedules({ page, limit, search });
     setSchedules(res.data.data.schedules || []);
-    updatePagination(key, { total: res.data.data.pagination?.total || 0 });
+    updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
   } catch (err) {
     console.error("Failed to fetch schedules", err);
   } finally {
@@ -152,15 +155,17 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
     setKeyRefreshing(key, false);
   }
 }, [paginations.schedules, searchQueries.schedules]);
-    //   Initial data fetch can be triggered here  i.e. fetchDashboard() or fetchBuses() etc. or can be triggered in respective screens
- useEffect(() => {
+  const { isAuthenticated } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
     fetchDashboard();
     fetchBuses();
     fetchBookings();
     fetchRoutes();
     fetchSchedules();
     fetchUsers();
-  } , []);
+  }, [isAuthenticated]);
   // ── Combined Context Object
   const value = {
     // Data
@@ -178,6 +183,8 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
     // Search & Pagination
     getPagination, updatePagination,
     getSearchQuery, updateSearchQuery,
+    // Sorting
+    getSort, updateSort,
     // Actions
     fetchBuses, fetchBookings, fetchRoutes, fetchDashboard
   };

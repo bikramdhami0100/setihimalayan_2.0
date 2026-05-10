@@ -7,6 +7,13 @@ export const createBus = async (req, res, next) => {
         const existing = await Bus.findByBusNumber(busData.bus_number);
         if (existing) return errorResponse(res, 'Bus number already exists', 400);
         
+        if (busData.registration_number) {
+            const existingReg = await Bus.findByRegistrationNumber(busData.registration_number);
+            if (existingReg) return errorResponse(res, 'Registration number already exists', 400);
+        } else {
+            busData.registration_number = null;
+        }
+
         const busId = await Bus.create(busData);
         successResponse(res, 'Bus created successfully', { busId }, 201);
     } catch (err) {
@@ -16,11 +23,13 @@ export const createBus = async (req, res, next) => {
 
 export const getAllBuses = async (req, res, next) => {
     try {
-        const { bus_type, status, search, page, limit } = req.query;
+        const { bus_type, status, search, page, limit, sortBy, sortOrder } = req.query;
         const filters = {
             bus_type,
             status,
             search,
+            sortBy,
+            sortOrder,
             page: page ? parseInt(page) : undefined,
             limit: limit ? parseInt(limit) : undefined
         };
@@ -55,7 +64,19 @@ export const updateBus = async (req, res, next) => {
         const bus = await Bus.findById(busId);
         if (!bus) return errorResponse(res, 'Bus not found', 404);
         
-        await Bus.update(busId, req.body);
+        const updateData = req.body;
+        if (updateData.registration_number === '') {
+            updateData.registration_number = null;
+        }
+
+        if (updateData.registration_number) {
+            const existingReg = await Bus.findByRegistrationNumber(updateData.registration_number);
+            if (existingReg && existingReg.id !== Number(busId)) {
+                return errorResponse(res, 'Registration number already exists', 400);
+            }
+        }
+        
+        await Bus.update(busId, updateData);
         successResponse(res, 'Bus updated successfully');
     } catch (err) {
         next(err);

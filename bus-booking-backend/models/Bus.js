@@ -47,6 +47,14 @@ class Bus {
         return rows[0];
     }
 
+    static async findByRegistrationNumber(regNumber) {
+        const [rows] = await pool.execute(
+            'SELECT * FROM buses WHERE registration_number = ? AND deleted_at IS NULL',
+            [regNumber]
+        );
+        return rows[0];
+    }
+
     static async findAll(filters = {}) {
         let query = 'SELECT * FROM buses WHERE deleted_at IS NULL';
         let countQuery = 'SELECT COUNT(*) as total FROM buses WHERE deleted_at IS NULL';
@@ -64,13 +72,17 @@ class Bus {
         if (filters.status) addFilter('status = ?', filters.status);
         if (filters.search) {
             const searchTerm = `%${filters.search}%`;
-            query += ' AND (bus_number LIKE ? OR registration_number LIKE ?)';
-            countQuery += ' AND (bus_number LIKE ? OR registration_number LIKE ?)';
-            values.push(searchTerm, searchTerm);
-            countValues.push(searchTerm, searchTerm);
+            query += ' AND (bus_number LIKE ? OR registration_number LIKE ? OR license_plate LIKE ? OR bus_type LIKE ?)';
+            countQuery += ' AND (bus_number LIKE ? OR registration_number LIKE ? OR license_plate LIKE ? OR bus_type LIKE ?)';
+            values.push(searchTerm, searchTerm, searchTerm, searchTerm);
+            countValues.push(searchTerm, searchTerm, searchTerm, searchTerm);
         }
 
-        query += ' ORDER BY created_at DESC';
+        // Sorting
+        const allowedSortFields = ['bus_number', 'bus_type', 'status', 'total_seats', 'year', 'created_at', 'registration_number', 'manufacturer'];
+        const sortBy = filters.sortBy && allowedSortFields.includes(filters.sortBy) ? filters.sortBy : 'created_at';
+        const sortOrder = filters.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+        query += ` ORDER BY ${sortBy} ${sortOrder}`;
 
         if (filters.page && filters.limit) {
             const offset = (filters.page - 1) * filters.limit;

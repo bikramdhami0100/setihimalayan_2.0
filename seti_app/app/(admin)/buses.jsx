@@ -1,42 +1,32 @@
-/**
- * AdminBuses.jsx  –  Fleet Manager (NativeWind / Tailwind CSS)
- *
- * Install once:
- *   npx expo install nativewind tailwindcss expo-print expo-sharing expo-file-system react-native-calendars
- *
- * tailwind.config.js  →  content: ["./app/**\/*.{js,jsx,ts,tsx}"]
- * babel.config.js     →  plugins: ["nativewind/babel"]
- */
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View, Text, SafeAreaView, ScrollView, TouchableOpacity,
-  ActivityIndicator, Alert, FlatList, RefreshControl,
-  KeyboardAvoidingView, Platform, StatusBar,
+  ActivityIndicator, Alert, RefreshControl,
+  KeyboardAvoidingView, Platform, StatusBar, StyleSheet,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Modal, TextInput, Searchbar } from "react-native-paper";
-import { Calendar } from "react-native-calendars";   // ✅ for date fields
-import * as Print      from "expo-print";
-import * as Sharing    from "expo-sharing";
+import { Calendar } from "react-native-calendars";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { createBus, deleteBus, updateBus } from "../../api/buses";
+import { createBus, deleteBus, updateBus, getBusById, getAllBusesForExport } from "../../api/buses";
 import { useAdminData } from "../../context/AdminContext";
+import PdfViewer from "../../components/PdfViewer";
 
-// ─── Static config ────────────────────────────────────────────────────────────
 const BUS_TYPES = ["Luxury", "Standard", "Mini", "Sleeper"];
-const STATUSES  = ["active", "inactive", "maintenance"];
+const STATUSES = ["active", "inactive", "maintenance"];
 const AMENITIES = ["AC", "WiFi", "Charging Point", "TV", "Snacks", "Water", "Blanket", "Pillow"];
+const PAGE_SIZES = [10, 25, 50, 100];
 
-const normalizeStatus = (status) => status === 'retired' ? 'inactive' : status;
+const normalizeStatus = (status) => status === "retired" ? "inactive" : status;
 const normalizeBus = (item) => ({ ...item, status: normalizeStatus(item.status) });
 
-// Full class strings so Tailwind compiler detects them (no interpolation)
 const STATUS_CFG = {
-  active:      { dot: "bg-green-500",  badge: "bg-green-100",  text: "text-green-700",  label: "ACTIVE"      },
-  inactive:    { dot: "bg-red-500",    badge: "bg-red-100",    text: "text-red-700",    label: "INACTIVE"    },
-  maintenance: { dot: "bg-yellow-500", badge: "bg-yellow-100", text: "text-yellow-700", label: "MAINTENANCE" },
+  active: { dot: { backgroundColor: "#22C55E" }, badge: { backgroundColor: "#DCFCE7" }, text: { color: "#15803D" }, label: "ACTIVE" },
+  inactive: { dot: { backgroundColor: "#EF4444" }, badge: { backgroundColor: "#FEE2E2" }, text: { color: "#B91C1C" }, label: "INACTIVE" },
+  maintenance: { dot: { backgroundColor: "#EAB308" }, badge: { backgroundColor: "#FEF9C3" }, text: { color: "#A16207" }, label: "MAINTENANCE" },
 };
 
 const EMPTY_FORM = {
@@ -48,7 +38,16 @@ const EMPTY_FORM = {
   insurance_expiry: "", fitness_expiry: "", notes: "",
 };
 
-// ─── Pure helpers ─────────────────────────────────────────────────────────────
+const COLUMNS = [
+  { key: "bus_number", label: "Bus No.", sortable: true, flex: 0.9 },
+  { key: "registration_number", label: "Registration", sortable: true, flex: 1 },
+  { key: "bus_type", label: "Type", sortable: true, flex: 0.7 },
+  { key: "total_seats", label: "Seats", sortable: true, flex: 0.5 },
+  { key: "status", label: "Status", sortable: true, flex: 1 },
+  { key: "created_at", label: "Created", sortable: true, flex: 0.9 },
+  { key: "actions", label: "Actions", sortable: false, flex: 1.2 },
+];
+
 const parseAmenities = (raw) => {
   if (Array.isArray(raw)) return raw;
   try { return JSON.parse(raw || "[]"); } catch { return []; }
@@ -57,54 +56,58 @@ const parseSeatLayout = (raw) => {
   try { return JSON.parse(raw || "{}"); } catch { return {}; }
 };
 
-/** Map an API bus item → form state */
 const itemToForm = (item) => {
   const sl = parseSeatLayout(item.seat_layout);
   return {
-    bus_number:          item.bus_number          ?? "",
+    bus_number: item.bus_number ?? "",
     registration_number: item.registration_number ?? "",
-    license_plate:       item.license_plate        ?? "",
-    bus_type:            item.bus_type             ?? "Luxury",
-    status:              normalizeStatus(item.status ?? "active"),
-    total_seats:         String(item.total_seats   ?? 40),
-    seat_rows:           String(sl.rows            ?? 10),
-    seat_columns:        String(sl.columns         ?? 4),
-    seat_layout_type:    sl.layout                 ?? "2x2",
-    amenities:           parseAmenities(item.amenities),
-    manufacturer:        item.manufacturer         ?? "",
-    model:               item.model                ?? "",
-    year:                item.year ? String(item.year) : "",
-    color:               item.color                ?? "",
-    insurance_expiry:    item.insurance_expiry ? item.insurance_expiry.split("T")[0] : "",
-    fitness_expiry:      item.fitness_expiry   ? item.fitness_expiry.split("T")[0]   : "",
-    notes:               item.notes                ?? "",
+    license_plate: item.license_plate ?? "",
+    bus_type: item.bus_type ?? "Luxury",
+    status: normalizeStatus(item.status ?? "active"),
+    total_seats: String(item.total_seats ?? 40),
+    seat_rows: String(sl.rows ?? 10),
+    seat_columns: String(sl.columns ?? 4),
+    seat_layout_type: sl.layout ?? "2x2",
+    amenities: parseAmenities(item.amenities),
+    manufacturer: item.manufacturer ?? "",
+    model: item.model ?? "",
+    year: item.year ? String(item.year) : "",
+    color: item.color ?? "",
+    insurance_expiry: item.insurance_expiry ? item.insurance_expiry.split("T")[0] : "",
+    fitness_expiry: item.fitness_expiry ? item.fitness_expiry.split("T")[0] : "",
+    notes: item.notes ?? "",
   };
 };
 
-/** Map form state → API payload */
 const toPayload = (f) => ({
-  bus_number:          f.bus_number,
+  bus_number: f.bus_number,
   registration_number: f.registration_number,
-  license_plate:       f.license_plate  || null,
-  bus_type:            f.bus_type,
-  status:              f.status === 'inactive' ? 'retired' : f.status,
-  total_seats:         parseInt(f.total_seats) || 40,
+  license_plate: f.license_plate || null,
+  bus_type: f.bus_type,
+  status: f.status === "inactive" ? "retired" : f.status,
+  total_seats: parseInt(f.total_seats) || 40,
   seat_layout: {
-    rows:    parseInt(f.seat_rows)    || 10,
+    rows: parseInt(f.seat_rows) || 10,
     columns: parseInt(f.seat_columns) || 4,
-    layout:  f.seat_layout_type       || "2x2",
+    layout: f.seat_layout_type || "2x2",
   },
-  amenities:           f.amenities,
-  manufacturer:        f.manufacturer  || null,
-  model:               f.model         || null,
-  year:                f.year ? parseInt(f.year) : null,
-  color:               f.color         || null,
-  insurance_expiry:    f.insurance_expiry || null,
-  fitness_expiry:      f.fitness_expiry   || null,
-  notes:               f.notes            || null,
+  amenities: f.amenities,
+  manufacturer: f.manufacturer || null,
+  model: f.model || null,
+  year: f.year ? parseInt(f.year) : null,
+  color: f.color || null,
+  insurance_expiry: f.insurance_expiry || null,
+  fitness_expiry: f.fitness_expiry || null,
+  notes: f.notes || null,
 });
 
-// ─── Export builders ──────────────────────────────────────────────────────────
+const formatDate = (d) => {
+  if (!d) return "—";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return "—";
+  return dt.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+};
+
 const buildHTML = (buses) => `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <style>
   body{font-family:Arial,sans-serif;padding:28px;color:#1e293b}
@@ -119,8 +122,8 @@ const buildHTML = (buses) => `<!DOCTYPE html><html><head><meta charset="utf-8"/>
   .inactive{background:#fee2e2;color:#dc2626}
   .maintenance{background:#fef9c3;color:#ca8a04}
 </style></head><body>
-<h1>🚌 Fleet Report</h1>
-<p>Generated: ${new Date().toLocaleString()} · ${buses.length} vehicles</p>
+<h1>Fleet Report</h1>
+<p>Generated: ${new Date().toLocaleString()} \u00B7 ${buses.length} vehicles</p>
 <table>
   <thead><tr>
     <th>#</th><th>Bus No.</th><th>Reg. No.</th><th>License</th>
@@ -132,22 +135,22 @@ const buildHTML = (buses) => `<!DOCTYPE html><html><head><meta charset="utf-8"/>
       <td>${i + 1}</td>
       <td><strong>${b.bus_number}</strong></td>
       <td>${b.registration_number}</td>
-      <td>${b.license_plate || "—"}</td>
+      <td>${b.license_plate || "\u2014"}</td>
       <td>${b.bus_type}</td>
       <td><span class="badge ${b.status}">${b.status}</span></td>
       <td>${b.total_seats}</td>
-      <td>${parseAmenities(b.amenities).join(", ") || "—"}</td>
-      <td>${[b.manufacturer, b.model].filter(Boolean).join(" ") || "—"}</td>
-      <td>${b.year || "—"}</td>
-      <td>${b.insurance_expiry?.split("T")[0] || "—"}</td>
-      <td>${b.fitness_expiry?.split("T")[0]   || "—"}</td>
+      <td>${parseAmenities(b.amenities).join(", ") || "\u2014"}</td>
+      <td>${[b.manufacturer, b.model].filter(Boolean).join(" ") || "\u2014"}</td>
+      <td>${b.year || "\u2014"}</td>
+      <td>${b.insurance_expiry?.split("T")[0] || "\u2014"}</td>
+      <td>${b.fitness_expiry?.split("T")[0] || "\u2014"}</td>
     </tr>`).join("")}
   </tbody>
 </table></body></html>`;
 
 const buildCSV = (buses) => {
-  const H = ["ID","Bus Number","Registration","License","Type","Status","Seats",
-             "Amenities","Manufacturer","Model","Year","Color","Ins. Expiry","Fit. Expiry","Notes"];
+  const H = ["ID", "Bus Number", "Registration", "License", "Type", "Status", "Seats",
+    "Amenities", "Manufacturer", "Model", "Year", "Color", "Ins. Expiry", "Fit. Expiry", "Notes"];
   const E = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const rows = buses.map((b) => [
     b.id, b.bus_number, b.registration_number, b.license_plate,
@@ -158,38 +161,68 @@ const buildCSV = (buses) => {
   return [H.map(E).join(","), ...rows].join("\r\n");
 };
 
+const buildXLS = (buses) => {
+  const headers = ["ID", "Bus Number", "Registration", "License", "Type", "Status", "Seats",
+    "Amenities", "Manufacturer", "Model", "Year", "Color", "Ins. Expiry", "Fit. Expiry", "Notes"];
+  const rows = buses.map((b) => [
+    b.id, b.bus_number, b.registration_number, b.license_plate || "",
+    b.bus_type, b.status, b.total_seats, parseAmenities(b.amenities).join(", "),
+    b.manufacturer || "", b.model || "", b.year || "", b.color || "",
+    b.insurance_expiry?.split("T")[0] || "", b.fitness_expiry?.split("T")[0] || "", b.notes || "",
+  ]);
+  const allRows = [headers, ...rows];
+  const maxCols = Math.max(...allRows.map((r) => r.length));
+  const pad = (r) => { const a = [...r]; while (a.length < maxCols) a.push(""); return a; };
+  const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="Fleet">
+  <Table>
+   ${allRows.map((r) => `    <Row>${pad(r).map((c) => ` <Cell><Data ss:Type="String">${esc(c)}</Data></Cell>`).join("")}</Row>`).join("\n")}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+  return xml;
+};
+
 const shareFile = async (path, mimeType, dialogTitle) => {
   let uri = path;
-  if (Platform.OS === 'android') {
+  if (Platform.OS === "android") {
     try {
       const contentUri = await FileSystem.getContentUriAsync(path);
       uri = contentUri.uri;
-    } catch {
-      uri = path;
-    }
+    } catch { uri = path; }
   }
   await Sharing.shareAsync(uri, { mimeType, dialogTitle });
+};
+
+const downloadBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 };
 
 const exportCSV = async (buses) => {
   const csv = buildCSV(buses);
   if (Platform.OS === "web") {
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `fleet_${Date.now()}.csv`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), `fleet_${Date.now()}.csv`);
     return;
   }
-
   const path = `${FileSystem.cacheDirectory}fleet_${Date.now()}.csv`;
   await FileSystem.writeAsStringAsync(path, csv, { encoding: FileSystem.EncodingType.UTF8 });
   await shareFile(path, "text/csv", "Export CSV");
 };
+
 const exportPDF = async (buses) => {
   const html = buildHTML(buses);
   if (Platform.OS === "web") {
@@ -204,127 +237,95 @@ const exportPDF = async (buses) => {
         anchor.remove();
         return;
       }
-    } catch (error) {
-      console.warn('Web PDF export fallback:', error);
-    }
+    } catch { /* fallback */ }
     await Print.printAsync({ html });
     return;
   }
-
   const { uri } = await Print.printToFileAsync({ html });
   await shareFile(uri, "application/pdf", "Export PDF");
 };
 
-// ─── Reusable atoms ───────────────────────────────────────────────────────────
+const exportXLS = async (buses) => {
+  const xls = buildXLS(buses);
+  if (Platform.OS === "web") {
+    downloadBlob(new Blob([xls], { type: "application/vnd.ms-excel;charset=utf-8" }), `fleet_${Date.now()}.xls`);
+    return;
+  }
+  const path = `${FileSystem.cacheDirectory}fleet_${Date.now()}.xls`;
+  await FileSystem.writeAsStringAsync(path, xls, { encoding: FileSystem.EncodingType.UTF8 });
+  await shareFile(path, "application/vnd.ms-excel", "Export Excel");
+};
 
-/** Labelled section heading inside the form */
 const SectionLabel = ({ children }) => (
-  <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">
-    {children}
-  </Text>
+  <Text style={styles.sectionLabel}>{children}</Text>
 );
 
-/** react-native-paper TextInput with consistent theming */
-const Field = ({ style, ...props }) => (
-  <TextInput
-    mode="outlined"
-    activeOutlineColor="#1e3a8a"
-    outlineColor="#e2e8f0"
-    textColor="#0f172a"
-    style={[{ backgroundColor: "#fff", marginBottom: 12 }, style]}
-    theme={{ colors: { primary: "#1e3a8a" } }}
-    {...props}
-  />
+const Field = ({ style, error, ...props }) => (
+  <View style={{ marginBottom: 12 }}>
+    <TextInput
+      mode="outlined"
+      error={!!error}
+      textColor="#0f172a"
+      style={[{ backgroundColor: "#fff" }, style]}
+      {...props}
+    />
+    {error ? <Text style={styles.fieldError}>{error}</Text> : null}
+  </View>
 );
 
-/** NEW: Date picker using react-native-calendars for date-only fields */
-const DatePicker = ({ label, value, onChange, minDate }) => {
+const DatePicker = ({ label, value, onChange, minDate, error }) => {
   const [showCalendar, setShowCalendar] = useState(false);
-
-  const handleDateSelect = (day) => {
-    onChange(day.dateString);   // "YYYY-MM-DD"
-    setShowCalendar(false);
-  };
-
-  const marked = value ? { [value]: { selected: true, selectedColor: '#1e3a8a' } } : {};
-
+  const marked = value ? { [value]: { selected: true, selectedColor: "#1e3a8a" } } : {};
   return (
-    <>
-      <TouchableOpacity
-        onPress={() => setShowCalendar(true)}
-        className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3 flex-row items-center justify-between"
-      >
-        <Text className="text-sm font-bold text-slate-500">
-          {value ? value : `Select ${label}`}
-        </Text>
-        <Ionicons name="calendar-outline" size={18} color="#64748b" />
+    <View style={{ marginBottom: 12 }}>
+      <TouchableOpacity onPress={() => setShowCalendar(true)}
+        style={[styles.datePickerBtn, error ? { borderColor: "#ef4444" } : undefined]}>
+        <Text style={styles.datePickerText}>{value ? value : `Select ${label}`}</Text>
+        <Ionicons name="calendar-outline" size={18} color={error ? "#ef4444" : "#64748b"} />
       </TouchableOpacity>
-
+      {error ? <Text style={styles.fieldError}>{error}</Text> : null}
       <Portal>
-        <Modal
-          visible={showCalendar}
-          onDismiss={() => setShowCalendar(false)}
-          contentContainerStyle={{ backgroundColor: "#fff", margin: 20, borderRadius: 20, padding: 16 }}
-        >
-          <Calendar
-            onDayPress={handleDateSelect}
-            markedDates={marked}
-            minDate={minDate}
-            theme={{
-              selectedDayBackgroundColor: '#1e3a8a',
-              arrowColor: '#1e3a8a',
-              todayTextColor: '#1e3a8a',
-            }}
-          />
+        <Modal visible={showCalendar} onDismiss={() => setShowCalendar(false)}
+          contentContainerStyle={{ backgroundColor: "#fff", margin: 20, borderRadius: 20, padding: 16 }}>
+          <Calendar onDayPress={(day) => { onChange(day.dateString); setShowCalendar(false); }}
+            markedDates={marked} minDate={minDate}
+            theme={{ selectedDayBackgroundColor: "#1e3a8a", arrowColor: "#1e3a8a", todayTextColor: "#1e3a8a" }} />
         </Modal>
       </Portal>
-    </>
+    </View>
   );
 };
 
-/** Pill option row (Bus Type / Status) */
 const PillRow = ({ options, value, onChange }) => (
-  <View className="flex-row flex-wrap gap-2 mb-2">
+  <View style={styles.pillRowContainer}>
     {options.map((opt) => {
       const on = value === opt;
       const activeBg =
-        opt === "active"      ? "bg-green-600 border-green-600"
-        : opt === "inactive"    ? "bg-red-600 border-red-600"
-        : opt === "maintenance" ? "bg-yellow-500 border-yellow-500"
-        : "bg-blue-900 border-blue-900";
+        opt === "active" ? { backgroundColor: "#16A34A", borderColor: "#16A34A" }
+          : opt === "inactive" ? { backgroundColor: "#DC2626", borderColor: "#DC2626" }
+            : opt === "maintenance" ? { backgroundColor: "#EAB308", borderColor: "#EAB308" }
+              : { backgroundColor: "#1E3A8A", borderColor: "#1E3A8A" };
       return (
-        <TouchableOpacity
-          key={opt}
-          onPress={() => onChange(opt)}
-          className={`px-4 py-2 rounded-full border ${on ? activeBg : "bg-slate-100 border-slate-200"}`}
-        >
-          <Text className={`text-xs font-extrabold ${on ? "text-white" : "text-slate-500"}`}>
-            {opt}
-          </Text>
+        <TouchableOpacity key={opt} onPress={() => onChange(opt)}
+          style={[styles.pill, on ? activeBg : styles.pillInactive]}>
+          <Text style={[styles.pillText, on ? styles.pillTextActive : styles.pillTextInactive]}>{opt}</Text>
         </TouchableOpacity>
       );
     })}
   </View>
 );
 
-/** Amenity multi-select chips */
 const AmenityPicker = ({ selected, onChange }) => {
-  const toggle = (a) =>
-    onChange(selected.includes(a) ? selected.filter((x) => x !== a) : [...selected, a]);
+  const toggle = (a) => onChange(selected.includes(a) ? selected.filter((x) => x !== a) : [...selected, a]);
   return (
-    <View className="flex-row flex-wrap gap-2 mb-2">
+    <View style={styles.pillRowContainer}>
       {AMENITIES.map((a) => {
         const on = selected.includes(a);
         return (
-          <TouchableOpacity
-            key={a}
-            onPress={() => toggle(a)}
-            className={`flex-row items-center gap-1 px-3 py-1.5 rounded-2xl border ${
-              on ? "bg-blue-100 border-blue-400" : "bg-slate-50 border-slate-200"
-            }`}
-          >
+          <TouchableOpacity key={a} onPress={() => toggle(a)}
+            style={[styles.amenityChip, on ? styles.amenityChipActive : styles.amenityChipInactive]}>
             {on && <Ionicons name="checkmark-circle" size={11} color="#2563eb" />}
-            <Text className={`text-xs font-bold ${on ? "text-blue-700" : "text-slate-400"}`}>{a}</Text>
+            <Text style={[styles.amenityChipText, on ? styles.amenityChipTextActive : styles.amenityChipTextInactive]}>{a}</Text>
           </TouchableOpacity>
         );
       })}
@@ -332,380 +333,134 @@ const AmenityPicker = ({ selected, onChange }) => {
   );
 };
 
-/** Coloured status badge for cards */
 const StatusBadge = ({ status }) => {
   const s = STATUS_CFG[status] ?? STATUS_CFG.inactive;
   return (
-    <View className={`flex-row items-center gap-1 px-2 py-1 rounded-lg ${s.badge}`}>
-      <View className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      <Text className={`text-[9px] font-black ${s.text}`}>{s.label}</Text>
+    <View style={[styles.statusBadgeContainer, s.badge]}>
+      <View style={[styles.statusDot, s.dot]} />
+      <Text style={[styles.statusLabel, s.text]}>{s.label}</Text>
     </View>
   );
 };
 
-// ─── Bus card row ─────────────────────────────────────────────────────────────
-const BusCard = React.memo(({ item, index, onEdit, onDelete, onView, isDeleting }) => {
-  const amenities = parseAmenities(item.amenities);
-  const make      = [item.manufacturer, item.model, item.year ? `(${item.year})` : null]
-    .filter(Boolean).join(" ");
-
+const BusForm = ({ visible, editingBus, form, setForm, formErrors, clearFieldError, saving, onSave, onClose }) => {
+  const clr = (f) => (v) => { if (clearFieldError) clearFieldError(f); setForm({ ...form, [f]: v }); };
   return (
-    <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
-      <View
-        className="bg-white mx-3 mb-3 rounded-2xl p-4 border border-slate-100"
-        style={{ shadowColor: "#1e3a8a", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}
-      >
-        {/* Bus number + status */}
-        <View className="flex-row items-start justify-between mb-3">
-          <View className="flex-row items-center gap-3 flex-1">
-            <View className="bg-blue-50 p-2.5 rounded-xl">
-              <MaterialCommunityIcons name="bus" size={22} color="#1e3a8a" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-base font-black text-slate-900" numberOfLines={1}>
-                {item.bus_number}
-              </Text>
-              <Text className="text-xs font-bold text-slate-500">
-                {item.bus_type} · {item.total_seats} seats
-              </Text>
-            </View>
-          </View>
-          <StatusBadge status={item.status} />
-        </View>
-
-        {/* Registration / license / make */}
-        <View className="flex-row flex-wrap gap-3 pt-3 mb-3 border-t border-slate-50">
-          <View className="flex-row items-center gap-1">
-            <Ionicons name="card-outline" size={13} color="#94a3b8" />
-            <Text className="text-xs font-bold text-slate-600">{item.registration_number}</Text>
-          </View>
-          {item.license_plate ? (
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="id-card-outline" size={13} color="#94a3b8" />
-              <Text className="text-xs font-bold text-slate-600">{item.license_plate}</Text>
-            </View>
-          ) : null}
-          {make ? (
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="construct-outline" size={13} color="#94a3b8" />
-              <Text className="text-xs font-bold text-slate-600">{make}</Text>
-            </View>
-          ) : null}
-        </View>
-
-        {/* Amenity chips */}
-        {amenities.length > 0 && (
-          <View className="flex-row flex-wrap gap-1 mb-3">
-            {amenities.map((a) => (
-              <View key={a} className="bg-blue-100 px-2 py-0.5 rounded-md">
-                <Text className="text-[9px] font-extrabold text-blue-700">{a}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* View / Edit / Delete */}
-        <View className="flex-row justify-end gap-2">
-          <TouchableOpacity
-            onPress={() => onView(item)}
-            className="flex-row items-center gap-1 bg-blue-50 px-4 py-2 rounded-xl"
-          >
-            <Ionicons name="eye-outline" size={13} color="#1e3a8a" />
-            <Text className="text-xs font-extrabold text-blue-700">View</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => onEdit(item)}
-            className="flex-row items-center gap-1 bg-slate-100 px-4 py-2 rounded-xl"
-          >
-            <Ionicons name="pencil-outline" size={13} color="#475569" />
-            <Text className="text-xs font-extrabold text-slate-600">Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              const id = item.id || item._id;
-              console.log("Delete button pressed — bus:", item.bus_number, "ID:", id);
-              onDelete(id, item.bus_number);
-            }}
-            className="flex-row items-center gap-1 bg-red-50 px-4 py-2 rounded-xl"
-          >
-            <Ionicons name="trash-outline" size={13} color="#ef4444" />
-            <Text className="text-xs font-extrabold text-red-500">Delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Animated.View>
-  );
-});
-
-// ─── Create / Edit form modal (with DatePicker for expiry fields) ───────────
-const BusForm = ({ visible, editingBus, form, setForm, saving, onSave, onClose }) => (
   <Portal>
-    <Modal
-      visible={visible}
-      onDismiss={onClose}
-      contentContainerStyle={{
-        backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%",
-      }}
-    >
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <View style={{ flex: 1 }}>
-          {/* Modal header */}
-          <View className="flex-row items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
+    <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.modalContent}>
+      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+        <View style={styles.flex1}>
+          <View style={styles.modalHeader}>
             <View>
-              <Text className="text-lg font-black text-slate-900">
-                {editingBus ? "Edit Vehicle" : "Register Vehicle"}
-              </Text>
-              <Text className="text-xs text-slate-400 mt-0.5">
-                {editingBus ? `Updating ${editingBus.bus_number}` : "Add a new bus to your fleet"}
-              </Text>
+              <Text style={styles.modalTitle}>{editingBus ? "Edit Vehicle" : "Register Vehicle"}</Text>
+              <Text style={styles.modalSubtitle}>{editingBus ? `Updating ${editingBus.bus_number}` : "Add a new bus to your fleet"}</Text>
             </View>
-            <TouchableOpacity
-              onPress={onClose}
-              className="w-9 h-9 bg-slate-100 rounded-xl items-center justify-center"
-            >
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={17} color="#64748b" />
             </TouchableOpacity>
           </View>
-
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 30 }}
-            className="px-5"
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-
-          {/* Basic info */}
-          <SectionLabel>Basic Information</SectionLabel>
-          <Field label="Bus Number *"          value={form.bus_number}          onChangeText={(t) => setForm({ ...form, bus_number: t })} />
-          <Field label="Registration Number *" value={form.registration_number} onChangeText={(t) => setForm({ ...form, registration_number: t })} />
-          <Field label="License Plate"         value={form.license_plate}       onChangeText={(t) => setForm({ ...form, license_plate: t })} />
-
-          {/* Type & Status */}
-          <SectionLabel>Bus Type</SectionLabel>
-          <PillRow options={BUS_TYPES} value={form.bus_type} onChange={(v) => setForm({ ...form, bus_type: v })} />
-
-          <SectionLabel>Status</SectionLabel>
-          <PillRow options={STATUSES} value={form.status} onChange={(v) => setForm({ ...form, status: v })} />
-
-          {/* Capacity */}
-          <SectionLabel>Seating Capacity</SectionLabel>
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Field label="Seats" value={form.total_seats}      onChangeText={(t) => setForm({ ...form, total_seats: t })}      keyboardType="numeric" />
+          <ScrollView style={styles.flex1} contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 20 }}
+            showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <SectionLabel>Basic Information</SectionLabel>
+            <Field label="Bus Number *" value={form.bus_number} error={formErrors?.bus_number} onChangeText={clr("bus_number")} />
+            <Field label="Registration Number *" value={form.registration_number} error={formErrors?.registration_number} onChangeText={clr("registration_number")} />
+            <Field label="License Plate" value={form.license_plate} error={formErrors?.license_plate} onChangeText={clr("license_plate")} />
+            <SectionLabel>Bus Type</SectionLabel>
+            <PillRow options={BUS_TYPES} value={form.bus_type} onChange={(v) => setForm({ ...form, bus_type: v })} />
+            <SectionLabel>Status</SectionLabel>
+            <PillRow options={STATUSES} value={form.status} onChange={(v) => setForm({ ...form, status: v })} />
+            <SectionLabel>Seating Capacity</SectionLabel>
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}><Field label="Seats" value={form.total_seats} error={formErrors?.total_seats} onChangeText={clr("total_seats")} keyboardType="numeric" /></View>
+              <View style={styles.formRowItem}><Field label="Rows" value={form.seat_rows} error={formErrors?.seat_rows} onChangeText={clr("seat_rows")} keyboardType="numeric" /></View>
+              <View style={styles.formRowItem}><Field label="Cols" value={form.seat_columns} error={formErrors?.seat_columns} onChangeText={clr("seat_columns")} keyboardType="numeric" /></View>
             </View>
-            <View className="flex-1">
-              <Field label="Rows"  value={form.seat_rows}        onChangeText={(t) => setForm({ ...form, seat_rows: t })}        keyboardType="numeric" />
+            <Field label="Layout (e.g. 2x2)" value={form.seat_layout_type} error={formErrors?.seat_layout_type} onChangeText={clr("seat_layout_type")} />
+            <SectionLabel>Amenities</SectionLabel>
+            <AmenityPicker selected={form.amenities} onChange={(a) => setForm({ ...form, amenities: a })} />
+            <SectionLabel>Vehicle Details</SectionLabel>
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}><Field label="Manufacturer" value={form.manufacturer} error={formErrors?.manufacturer} onChangeText={clr("manufacturer")} /></View>
+              <View style={styles.formRowItem}><Field label="Model" value={form.model} error={formErrors?.model} onChangeText={clr("model")} /></View>
             </View>
-            <View className="flex-1">
-              <Field label="Cols"  value={form.seat_columns}     onChangeText={(t) => setForm({ ...form, seat_columns: t })}     keyboardType="numeric" />
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}><Field label="Year" value={form.year} error={formErrors?.year} onChangeText={clr("year")} keyboardType="numeric" /></View>
+              <View style={styles.formRowItem}><Field label="Color" value={form.color} error={formErrors?.color} onChangeText={clr("color")} /></View>
             </View>
-          </View>
-          <Field label="Layout (e.g. 2x2)" value={form.seat_layout_type} onChangeText={(t) => setForm({ ...form, seat_layout_type: t })} />
-
-          {/* Amenities */}
-          <SectionLabel>Amenities</SectionLabel>
-          <AmenityPicker selected={form.amenities} onChange={(a) => setForm({ ...form, amenities: a })} />
-
-          {/* Vehicle details */}
-          <SectionLabel>Vehicle Details</SectionLabel>
-          <View className="flex-row gap-2">
-            <View className="flex-1"><Field label="Manufacturer" value={form.manufacturer} onChangeText={(t) => setForm({ ...form, manufacturer: t })} /></View>
-            <View className="flex-1"><Field label="Model"        value={form.model}        onChangeText={(t) => setForm({ ...form, model: t })} /></View>
-          </View>
-          <View className="flex-row gap-2">
-            <View className="flex-1"><Field label="Year"  value={form.year}  onChangeText={(t) => setForm({ ...form, year: t })}  keyboardType="numeric" /></View>
-            <View className="flex-1"><Field label="Color" value={form.color} onChangeText={(t) => setForm({ ...form, color: t })} /></View>
-          </View>
-
-          {/* Compliance – NOW USING DatePicker */}
-          <SectionLabel>Compliance &amp; Expiry</SectionLabel>
-          <DatePicker
-            label="Insurance Expiry"
-            value={form.insurance_expiry}
-            onChange={(date) => setForm({ ...form, insurance_expiry: date })}
-          />
-          <DatePicker
-            label="Fitness Expiry"
-            value={form.fitness_expiry}
-            onChange={(date) => setForm({ ...form, fitness_expiry: date })}
-            minDate={form.insurance_expiry || undefined}
-          />
-
-          {/* Notes */}
-          <SectionLabel>Notes</SectionLabel>
-          <Field label="Additional notes…" value={form.notes} onChangeText={(t) => setForm({ ...form, notes: t })} multiline numberOfLines={3} />
-
-          {/* Action buttons */}
-          <View className="flex-row gap-3 mt-4 mb-10">
-            <TouchableOpacity
-              onPress={onClose}
-              className="flex-1 py-4 rounded-2xl items-center bg-slate-100 border border-slate-200"
-            >
-              <Text className="font-extrabold text-slate-500 text-sm">Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={onSave}
-              disabled={saving}
-              className="flex-[2] py-4 rounded-2xl items-center bg-blue-900"
-              style={{ shadowColor: "#1e3a8a", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 }}
-            >
-              {saving
-                ? <ActivityIndicator color="#fff" />
-                : <Text className="font-black text-white text-sm">
-                    {editingBus ? "UPDATE VEHICLE" : "SAVE VEHICLE"}
-                  </Text>
-              }
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+            <SectionLabel>Compliance &amp; Expiry</SectionLabel>
+            <DatePicker label="Insurance Expiry" value={form.insurance_expiry} error={formErrors?.insurance_expiry} onChange={(date) => setForm({ ...form, insurance_expiry: date })} />
+            <DatePicker label="Fitness Expiry" value={form.fitness_expiry} error={formErrors?.fitness_expiry} onChange={(date) => setForm({ ...form, fitness_expiry: date })} minDate={form.insurance_expiry || undefined} />
+            <SectionLabel>Notes</SectionLabel>
+            <Field label="Additional notes\u2026" value={form.notes} error={formErrors?.notes} onChangeText={clr("notes")} multiline numberOfLines={3} />
+            <View style={styles.formActions}>
+              <TouchableOpacity onPress={onClose} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity onPress={onSave} disabled={saving} style={styles.saveBtn}>
+                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>{editingBus ? "UPDATE VEHICLE" : "SAVE VEHICLE"}</Text>}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
   </Portal>
-);
+  );
+};
 
-// ─── View bus modal ───────────────────────────────────────────────────────────
 const ViewBusModal = ({ visible, bus, onClose }) => {
   if (!bus) return null;
   const form = itemToForm(bus);
   const amenities = parseAmenities(bus.amenities);
-
   return (
     <Portal>
-      <Modal
-        visible={visible}
-        onDismiss={onClose}
-        contentContainerStyle={{
-          backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%",
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          {/* Modal header */}
-          <View className="flex-row items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
+      <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.modalContent}>
+        <View style={styles.flex1}>
+          <View style={styles.modalHeader}>
             <View>
-              <Text className="text-lg font-black text-slate-900">View Vehicle</Text>
-              <Text className="text-xs text-slate-400 mt-0.5">Details for {bus.bus_number}</Text>
+              <Text style={styles.modalTitle}>View Vehicle</Text>
+              <Text style={styles.modalSubtitle}>Details for {bus.bus_number}</Text>
             </View>
-            <TouchableOpacity
-              onPress={onClose}
-              className="w-9 h-9 bg-slate-100 rounded-xl items-center justify-center"
-            >
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={17} color="#64748b" />
             </TouchableOpacity>
           </View>
-
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingBottom: 30 }}
-            className="px-5"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Basic info */}
+          <ScrollView style={styles.flex1} contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
             <SectionLabel>Basic Information</SectionLabel>
-            <View className="mb-3">
-              <Text className="text-xs font-bold text-slate-500 mb-1">Bus Number</Text>
-              <Text className="text-sm font-semibold text-slate-900">{form.bus_number}</Text>
-            </View>
-            <View className="mb-3">
-              <Text className="text-xs font-bold text-slate-500 mb-1">Registration Number</Text>
-              <Text className="text-sm font-semibold text-slate-900">{form.registration_number}</Text>
-            </View>
-            <View className="mb-3">
-              <Text className="text-xs font-bold text-slate-500 mb-1">License Plate</Text>
-              <Text className="text-sm font-semibold text-slate-900">{form.license_plate || "—"}</Text>
-            </View>
-
-            {/* Type & Status */}
+            <View style={styles.viewField}><Text style={styles.viewFieldLabel}>Bus Number</Text><Text style={styles.viewFieldValue}>{form.bus_number}</Text></View>
+            <View style={styles.viewField}><Text style={styles.viewFieldLabel}>Registration Number</Text><Text style={styles.viewFieldValue}>{form.registration_number}</Text></View>
+            <View style={styles.viewField}><Text style={styles.viewFieldLabel}>License Plate</Text><Text style={styles.viewFieldValue}>{form.license_plate || "\u2014"}</Text></View>
             <SectionLabel>Bus Type</SectionLabel>
-            <View className="mb-3">
-              <Text className="text-sm font-semibold text-slate-900">{form.bus_type}</Text>
-            </View>
-
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>{form.bus_type}</Text></View>
             <SectionLabel>Status</SectionLabel>
-            <View className="mb-3">
-              <Text className="text-sm font-semibold text-slate-900">{form.status}</Text>
-            </View>
-
-            {/* Capacity */}
+            <View style={styles.viewField}><StatusBadge status={form.status} /></View>
             <SectionLabel>Seating Capacity</SectionLabel>
-            <View className="flex-row gap-2 mb-3">
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Seats</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.total_seats}</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Rows</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.seat_rows}</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Cols</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.seat_columns}</Text>
-              </View>
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Seats</Text><Text style={styles.viewFieldValue}>{form.total_seats}</Text></View>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Rows</Text><Text style={styles.viewFieldValue}>{form.seat_rows}</Text></View>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Cols</Text><Text style={styles.viewFieldValue}>{form.seat_columns}</Text></View>
             </View>
-            <View className="mb-3">
-              <Text className="text-xs font-bold text-slate-500 mb-1">Layout</Text>
-              <Text className="text-sm font-semibold text-slate-900">{form.seat_layout_type}</Text>
-            </View>
-
-            {/* Amenities */}
+            <View style={styles.viewField}><Text style={styles.viewFieldLabel}>Layout</Text><Text style={styles.viewFieldValue}>{form.seat_layout_type}</Text></View>
             <SectionLabel>Amenities</SectionLabel>
-            <View className="flex-row flex-wrap gap-2 mb-3">
+            <View style={styles.amenityListView}>
               {amenities.length > 0 ? amenities.map((a) => (
-                <View key={a} className="bg-blue-100 px-2 py-1 rounded-md">
-                  <Text className="text-xs font-extrabold text-blue-700">{a}</Text>
-                </View>
-              )) : <Text className="text-sm text-slate-500">None</Text>}
+                <View key={a} style={styles.amenityChipSmallView}><Text style={styles.amenityChipSmallTextView}>{a}</Text></View>
+              )) : <Text style={{ fontSize: 12, color: "#64748B" }}>None</Text>}
             </View>
-
-            {/* Vehicle details */}
             <SectionLabel>Vehicle Details</SectionLabel>
-            <View className="flex-row gap-2 mb-3">
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Manufacturer</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.manufacturer || "—"}</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Model</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.model || "—"}</Text>
-              </View>
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Manufacturer</Text><Text style={styles.viewFieldValue}>{form.manufacturer || "\u2014"}</Text></View>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Model</Text><Text style={styles.viewFieldValue}>{form.model || "\u2014"}</Text></View>
             </View>
-            <View className="flex-row gap-2 mb-3">
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Year</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.year || "—"}</Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-xs font-bold text-slate-500 mb-1">Color</Text>
-                <Text className="text-sm font-semibold text-slate-900">{form.color || "—"}</Text>
-              </View>
+            <View style={styles.formRow}>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Year</Text><Text style={styles.viewFieldValue}>{form.year || "\u2014"}</Text></View>
+              <View style={styles.formRowItem}><Text style={styles.viewFieldLabel}>Color</Text><Text style={styles.viewFieldValue}>{form.color || "\u2014"}</Text></View>
             </View>
-
-            {/* Compliance */}
             <SectionLabel>Compliance &amp; Expiry</SectionLabel>
-            <View className="mb-3">
-              <Text className="text-xs font-bold text-slate-500 mb-1">Insurance Expiry</Text>
-              <Text className="text-sm font-semibold text-slate-900">{form.insurance_expiry || "—"}</Text>
-            </View>
-            <View className="mb-3">
-              <Text className="text-xs font-bold text-slate-500 mb-1">Fitness Expiry</Text>
-              <Text className="text-sm font-semibold text-slate-900">{form.fitness_expiry || "—"}</Text>
-            </View>
-
-            {/* Notes */}
+            <View style={styles.viewField}><Text style={styles.viewFieldLabel}>Insurance Expiry</Text><Text style={styles.viewFieldValue}>{form.insurance_expiry || "\u2014"}</Text></View>
+            <View style={styles.viewField}><Text style={styles.viewFieldLabel}>Fitness Expiry</Text><Text style={styles.viewFieldValue}>{form.fitness_expiry || "\u2014"}</Text></View>
             <SectionLabel>Notes</SectionLabel>
-            <View className="mb-3">
-              <Text className="text-sm font-semibold text-slate-900">{form.notes || "—"}</Text>
-            </View>
-
-            {/* Close button */}
-            <View className="flex-row gap-3 mt-4 mb-10">
-              <TouchableOpacity
-                onPress={onClose}
-                className="flex-1 py-4 rounded-2xl items-center bg-slate-100 border border-slate-200"
-              >
-                <Text className="font-extrabold text-slate-500 text-sm">Close</Text>
-              </TouchableOpacity>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>{form.notes || "\u2014"}</Text></View>
+            <View style={styles.formActions}>
+              <TouchableOpacity onPress={onClose} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Close</Text></TouchableOpacity>
             </View>
           </ScrollView>
         </View>
@@ -714,43 +469,67 @@ const ViewBusModal = ({ visible, bus, onClose }) => {
   );
 };
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+const PdfPreviewModal = ({ visible, uri, onClose }) => (
+  <Portal>
+    <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.pdfModalContent}>
+      <View style={styles.pdfModalHeader}>
+        <Text style={styles.pdfModalTitle}>PDF Preview</Text>
+        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+          <Ionicons name="close" size={17} color="#64748b" />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.pdfContainer}>
+        {Platform.OS === "web" ? (
+          <iframe src={uri} style={{ flex: 1, border: "none", width: "100%", height: "100%" }} title="PDF Preview" />
+        ) : (
+          <PdfViewer source={{ uri }} style={{ flex: 1 }} />
+        )}
+      </View>
+    </Modal>
+  </Portal>
+);
+
 export default function AdminBuses() {
   const {
     buses,
-    loading:    loadingStates,
+    loading: loadingStates,
     refreshing: refreshingStates,
     getPagination,
     updatePagination,
     getSearchQuery,
     updateSearchQuery,
+    getSort,
+    updateSort,
     fetchBuses,
   } = useAdminData();
 
-  const loading    = loadingStates.buses;
+  const loading = loadingStates.buses;
   const refreshing = refreshingStates.buses;
   const { page, limit, total: totalItems } = getPagination("buses");
   const searchQuery = getSearchQuery("buses");
+  const { sortBy, sortOrder } = getSort("buses");
 
-  const [searchInput,    setSearchInput]    = useState(searchQuery);
-  const [modalVisible,   setModalVisible]   = useState(false);
+  const [searchInput, setSearchInput] = useState(searchQuery);
+  const [modalVisible, setModalVisible] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
-  const [editingBus,     setEditingBus]     = useState(null);
-  const [viewingBus,     setViewingBus]     = useState(null);
-  const [saving,         setSaving]         = useState(false);
-  const [deleting,       setDeleting]       = useState(false);
-  const [exporting,      setExporting]      = useState(false);
-  const [form,           setForm]           = useState({ ...EMPTY_FORM });
+  const [pdfModalVisible, setPdfModalVisible] = useState(false);
+  const [pdfUri, setPdfUri] = useState(null);
+  const [editingBus, setEditingBus] = useState(null);
+  const [viewingBus, setViewingBus] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportRange, setExportRange] = useState("page");
+  const [pageSizeModalVisible, setPageSizeModalVisible] = useState(false);
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [formErrors, setFormErrors] = useState({});
   const debounceRef = useRef(null);
   const normalizedBuses = buses.map(normalizeBus);
 
-  useEffect(() => { fetchBuses(); }, [page, limit, searchQuery]);
+  useEffect(() => { fetchBuses(); }, [page, limit, searchQuery, sortBy, sortOrder]);
 
-  const commitSearch = useCallback(
-    (text) => updateSearchQuery("buses", text),
-    [updateSearchQuery],
-  );
+  const commitSearch = useCallback((text) => updateSearchQuery("buses", text), [updateSearchQuery]);
 
   const handleSearch = (text) => {
     setSearchInput(text);
@@ -758,167 +537,246 @@ export default function AdminBuses() {
     debounceRef.current = setTimeout(() => commitSearch(text), 500);
   };
 
-  const openCreate = () => { setEditingBus(null); setForm({ ...EMPTY_FORM }); setModalVisible(true); };
-  const openEdit   = (item) => { setEditingBus(item); setForm(itemToForm(item)); setModalVisible(true); };
-  const openView   = (item) => { setViewingBus(item); setViewModalVisible(true); };
+  const handleSort = (column) => {
+    if (!column.sortable) return;
+    const currentSort = getSort("buses");
+    if (currentSort.sortBy === column.key) {
+      updateSort("buses", column.key, currentSort.sortOrder === "ASC" ? "DESC" : "ASC");
+    } else {
+      updateSort("buses", column.key, "ASC");
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    updatePagination("buses", { limit: newSize, page: 1 });
+    setPageSizeModalVisible(false);
+  };
+
+  const openCreate = () => { setEditingBus(null); setForm({ ...EMPTY_FORM }); setFormErrors({}); setModalVisible(true); };
+  const openEdit = (item) => { setEditingBus(item); setForm(itemToForm(item)); setFormErrors({}); setModalVisible(true); };
+  const openView = (item) => { setViewingBus(item); setViewModalVisible(true); };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!form.bus_number.trim()) errors.bus_number = "Bus number is required";
+    if (!form.registration_number.trim()) errors.registration_number = "Registration number is required";
+    if (!form.total_seats || parseInt(form.total_seats) < 1) errors.total_seats = "Valid seat count required (1-80)";
+    if (parseInt(form.total_seats) > 80) errors.total_seats = "Maximum 80 seats allowed";
+    if (form.year && (isNaN(parseInt(form.year)) || parseInt(form.year) < 1990 || parseInt(form.year) > new Date().getFullYear()))
+      errors.year = "Year must be between 1990 and " + new Date().getFullYear();
+    if (form.insurance_expiry && isNaN(new Date(form.insurance_expiry).getTime()))
+      errors.insurance_expiry = "Invalid insurance expiry date";
+    if (form.fitness_expiry && isNaN(new Date(form.fitness_expiry).getTime()))
+      errors.fitness_expiry = "Invalid fitness expiry date";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearFieldError = (field) => {
+    if (formErrors[field]) setFormErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+  };
 
   const handleSave = async () => {
-    if (!form.bus_number.trim() || !form.registration_number.trim())
-      return Alert.alert("Required", "Bus Number and Registration Number are required.");
+    if (!validateForm()) return;
     setSaving(true);
     try {
-      editingBus
-        ? await updateBus(editingBus.id, toPayload(form))
-        : await createBus(toPayload(form));
+      editingBus ? await updateBus(editingBus.id, toPayload(form)) : await createBus(toPayload(form));
       setModalVisible(false);
-      fetchBuses(true);
-    } catch {
-      Alert.alert("Error", "Could not save. Please try again.");
-    } finally { setSaving(false); }
+      setFormErrors({});
+      Alert.alert("Success", editingBus ? "Bus updated successfully!" : "New bus added successfully!", [
+        { text: "OK", onPress: () => fetchBuses(true) },
+      ]);
+    } catch (err) {
+      const data = err.response?.data;
+      const msg = data?.message || "Could not save. Please try again.";
+      let fieldErrors = data?.fields;
+      if (!fieldErrors && Array.isArray(data?.errors)) {
+        fieldErrors = {};
+        data.errors.forEach(e => {
+          const m = e.match(/^"([^"]+)"/);
+          if (m) fieldErrors[m[1]] = e;
+        });
+      }
+      if (fieldErrors && typeof fieldErrors === 'object') setFormErrors(fieldErrors);
+      Alert.alert("Error", msg);
+    }
+    finally { setSaving(false); }
   };
 
   const handleDelete = (id, name) => {
-    if (!id) {
-      Alert.alert("Error", "Invalid bus ID. Cannot delete.");
-      return;
-    }
+    if (!id) { Alert.alert("Error", "Invalid bus ID. Cannot delete."); return; }
     Alert.alert("Remove Vehicle", `Delete "${name}" from the fleet?`, [
       { text: "Cancel", style: "cancel" },
-      { 
-        text: "Delete", 
-        style: "destructive", 
-        onPress: async () => {
+      {
+        text: "Delete", style: "destructive", onPress: async () => {
           setDeleting(true);
           try {
-            console.log(`Deleting bus with ID: ${id}`);
-            const response = await deleteBus(id);
-            console.log("Delete response:", response);
-            
-            Alert.alert("Success", "Bus deleted successfully.", [
-              { 
-                text: "OK", 
-                onPress: () => {
-                  setDeleting(false);
-                  fetchBuses(true);
-                }
-              }
-            ]);
+            await deleteBus(id);
+            Alert.alert("Success", "Bus deleted successfully.", [{ text: "OK", onPress: () => { setDeleting(false); fetchBuses(true); } }]);
           } catch (error) {
             setDeleting(false);
-            console.error("Delete error:", error);
-            const errorMessage = error.response?.data?.message || error.message || "Could not delete the bus. Please try again.";
-            Alert.alert("Error", errorMessage);
+            Alert.alert("Error", error.response?.data?.message || error.message || "Could not delete the bus.");
           }
-        } 
+        }
       },
     ]);
   };
 
   const handleExport = async (type) => {
-    setExportModalVisible(false);   // Close the export modal first
+    setExportModalVisible(false);
     setExporting(true);
     try {
-      if (type === "csv") await exportCSV(normalizedBuses);
-      if (type === "pdf") await exportPDF(normalizedBuses);
-    } catch (e) {
-      Alert.alert("Export Failed", e.message || "Something went wrong.");
-    } finally { setExporting(false); }
+      const exportData = exportRange === "all"
+        ? (await getAllBusesForExport()).data.data?.buses || normalizedBuses
+        : normalizedBuses;
+      const allBuses = exportData.map(normalizeBus);
+      if (type === "csv") await exportCSV(allBuses);
+      if (type === "pdf") await exportPDF(allBuses);
+      if (type === "xls") await exportXLS(allBuses);
+    } catch (e) { Alert.alert("Export Failed", e.message || "Something went wrong."); }
+    finally { setExporting(false); }
   };
 
   const totalPages = Math.ceil(totalItems / limit) || 1;
+  const startEntry = totalItems === 0 ? 0 : (page - 1) * limit + 1;
+  const endEntry = Math.min(page * limit, totalItems);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, page - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
+
+  const SortIndicator = ({ column }) => {
+    const current = getSort("buses");
+    if (current.sortBy !== column.key) return <Ionicons name="swap-vertical-outline" size={12} color="#94a3b8" style={{ marginLeft: 3 }} />;
+    return (
+      <Ionicons
+        name={current.sortOrder === "ASC" ? "caret-up" : "caret-down"}
+        size={12}
+        color="#fff"
+        style={{ marginLeft: 3 }}
+      />
+    );
+  };
+
+  const renderTableHeader = () => (
+    <View style={styles.tableHeaderRow}>
+      {COLUMNS.map((col) => (
+        <TouchableOpacity
+          key={col.key}
+          disabled={!col.sortable}
+          onPress={() => handleSort(col)}
+          style={[styles.tableHeaderCell, { flex: col.flex }]}
+        >
+          <View style={styles.tableHeaderContent}>
+            <Text style={styles.tableHeaderText}>{col.label}</Text>
+            {col.sortable && <SortIndicator column={col} />}
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  const renderTableRow = (item, index) => (
+    <Animated.View key={item.id ?? item._id} entering={FadeInDown.delay(index * 20).springify()}>
+      <View style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}>
+        <View style={[styles.tableCell, { flex: COLUMNS[0].flex }]}>
+          <Text style={styles.cellBusNumber} numberOfLines={1}>{item.bus_number}</Text>
+        </View>
+        <View style={[styles.tableCell, { flex: COLUMNS[1].flex }]}>
+          <Text style={styles.cellText} numberOfLines={1}>{item.registration_number}</Text>
+        </View>
+        <View style={[styles.tableCell, { flex: COLUMNS[2].flex }]}>
+          <Text style={styles.cellType} numberOfLines={1}>{item.bus_type}</Text>
+        </View>
+        <View style={[styles.tableCell, { flex: COLUMNS[3].flex }]}>
+          <Text style={styles.cellText}>{item.total_seats}</Text>
+        </View>
+        <View style={[styles.tableCell, { flex: COLUMNS[4].flex }]}>
+          <StatusBadge status={item.status} />
+        </View>
+        <View style={[styles.tableCell, { flex: COLUMNS[5].flex }]}>
+          <Text style={styles.cellDate}>{formatDate(item.created_at)}</Text>
+        </View>
+        <View style={[styles.tableCell, { flex: COLUMNS[6].flex, flexDirection: "row", gap: 4 }]}>
+          <TouchableOpacity onPress={() => openView(item)} style={styles.actionBtn}>
+            <Ionicons name="eye-outline" size={13} color="#1e3a8a" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => openEdit(item)} style={styles.actionBtn}>
+            <Ionicons name="pencil-outline" size={13} color="#475569" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={async () => {
+            try {
+              const busDetail = await getBusById(item.id);
+              const bus = busDetail.data.data.bus;
+              const pdfHtml = buildHTML([bus]);
+              const { uri } = await Print.printToFileAsync({ html: pdfHtml });
+              setPdfUri(uri);
+              setPdfModalVisible(true);
+            } catch { openView(item); }
+          }} style={[styles.actionBtn, { backgroundColor: "#F0FDF4" }]}>
+            <Ionicons name="document-text-outline" size={13} color="#16a34a" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => handleDelete(item.id || item._id, item.bus_number)}
+            style={[styles.actionBtn, { backgroundColor: "#FEF2F2" }]}
+          >
+            <Ionicons name="trash-outline" size={13} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Animated.View>
+  );
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className=" bg-slate-50">
+    <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
 
-      {/* ── Header ────────────────────────────────────────── */}
-      <View className="bg-blue-900 px-4 pt-4 pb-4">
-        <View className="flex-row items-center justify-between mb-3">
-
-          {/* Title */}
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
           <View>
-            <Text className="text-xl font-black text-white tracking-tight">Fleet Manager</Text>
-            <Text className="text-xs text-blue-300 font-semibold mt-0.5">
-              {totalItems} vehicle{totalItems !== 1 ? "s" : ""} registered
-            </Text>
+            <Text style={styles.headerTitle}>Fleet Manager</Text>
+            <Text style={styles.headerCount}>{totalItems} vehicle{totalItems !== 1 ? "s" : ""} registered</Text>
           </View>
-
-          {/* Actions */}
-          <View className="flex-row items-center gap-2">
-
-            {/* Export button */}
-            <TouchableOpacity
-              onPress={() => setExportModalVisible(true)}
-              disabled={exporting || buses.length === 0}
-              className="w-11 h-11 rounded-xl items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-            >
-              {exporting
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Ionicons name="share-outline" size={20} color="#fff" />
-              }
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => setExportModalVisible(true)}
+              disabled={exporting || buses.length === 0} style={styles.exportBtn}>
+              {exporting ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="share-outline" size={20} color="#fff" />}
             </TouchableOpacity>
-
-            {/* Add Bus */}
-            <TouchableOpacity
-              onPress={openCreate}
-              className="flex-row items-center gap-1.5 bg-white px-4 h-11 rounded-xl"
-            >
+            <TouchableOpacity onPress={openCreate} style={styles.addBtn}>
               <Ionicons name="add-circle" size={17} color="#1e3a8a" />
-              <Text className="font-black text-blue-900 text-xs">ADD BUS</Text>
+              <Text style={styles.addBtnText}>ADD BUS</Text>
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Search */}
         <Searchbar
-          placeholder="Search bus number, type, registration..."
+          placeholder="Search bus number, name, type, route..."
           onChangeText={handleSearch}
           value={searchInput}
           elevation={0}
-          style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 14, height: 46 }}
-          inputStyle={{ fontSize: 13, fontWeight: "600", color: "#fff" }}
+          style={styles.searchbar}
+          inputStyle={styles.searchbarInput}
           placeholderTextColor="rgba(255,255,255,0.4)"
           iconColor="rgba(255,255,255,0.6)"
         />
       </View>
 
-      {/* ── Bus list ──────────────────────────────────────── */}
       {loading && !refreshing ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.loadingContainer}>
           <ActivityIndicator color="#1e3a8a" size="large" />
-          <Text className="mt-3 text-slate-400 font-bold text-sm">Loading fleet...</Text>
+          <Text style={styles.loadingText}>Loading fleet...</Text>
         </View>
       ) : (
-        <FlatList
-          style={{ flex: 1 }}
-          data={normalizedBuses}
-          keyExtractor={(item) => item.id?.toString() ?? item._id}
-          renderItem={({ item, index }) => (
-            <BusCard item={item} index={index} onEdit={openEdit} onDelete={handleDelete} onView={openView} />
-          )}
-          contentContainerStyle={{ flexGrow: 1, paddingTop: 14, paddingBottom: 24 }}
+        <ScrollView
+          style={styles.flex1}
+          contentContainerStyle={styles.flexGrow}
           showsVerticalScrollIndicator={false}
           nestedScrollEnabled={true}
-          keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={
-            <View className="bg-white flex-row border-b border-slate-100">
-              {[
-                { label: "Total",       val: totalItems,                                                       tw: "text-blue-900"   },
-                { label: "Active",      val: normalizedBuses.filter((b) => b.status === "active").length,       tw: "text-green-600"  },
-                { label: "Inactive",    val: normalizedBuses.filter((b) => b.status === "inactive").length,     tw: "text-red-600"    },
-                { label: "Maintenance", val: normalizedBuses.filter((b) => b.status === "maintenance").length,  tw: "text-yellow-600" },
-              ].map(({ label, val, tw }, i, arr) => (
-                <View
-                  key={label}
-                  className={`flex-1 items-center py-3 ${i < arr.length - 1 ? "border-r border-slate-100" : ""}`}
-                >
-                  <Text className={`text-xl font-black ${tw}`}>{val}</Text>
-                  <Text className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{label}</Text>
-                </View>
-              ))}
-            </View>
-          }
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -927,117 +785,292 @@ export default function AdminBuses() {
               colors={["#1e3a8a"]}
             />
           }
+        >
+          <View style={styles.statsBar}>
+            {[
+              { label: "Total", val: totalItems },
+              { label: "Active", val: normalizedBuses.filter((b) => b.status === "active").length },
+              { label: "Inactive", val: normalizedBuses.filter((b) => b.status === "inactive").length },
+              { label: "Maintenance", val: normalizedBuses.filter((b) => b.status === "maintenance").length },
+            ].map(({ label, val }, i, arr) => (
+              <View key={label} style={[styles.statBox, i < arr.length - 1 && styles.statBoxBorder]}>
+                <Text style={[
+                  styles.statValue,
+                  label === "Active" ? { color: "#16A34A" } :
+                    label === "Inactive" ? { color: "#DC2626" } :
+                      label === "Maintenance" ? { color: "#CA8A04" } : {}
+                ]}>{val}</Text>
+                <Text style={styles.statLabel}>{label}</Text>
+              </View>
+            ))}
+          </View>
 
-          ListEmptyComponent={() => (
-            <View className="items-center pt-24 px-10">
-              <MaterialCommunityIcons name="bus-alert" size={72} color="#e2e8f0" />
-              <Text className="mt-4 text-slate-400 font-extrabold text-base text-center">
-                {searchQuery ? `No results for "${searchQuery}"` : "No Vehicles Found"}
-              </Text>
-              {!searchQuery && (
-                <TouchableOpacity
-                  onPress={openCreate}
-                  className="mt-5 flex-row items-center gap-2 bg-blue-900 px-6 py-3 rounded-2xl"
-                >
-                  <Ionicons name="add" size={16} color="#fff" />
-                  <Text className="text-white font-black text-sm">Add First Bus</Text>
-                </TouchableOpacity>
+          <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.tableScroll} nestedScrollEnabled={true}>
+            <View style={styles.tableContainer}>
+              {renderTableHeader()}
+              {normalizedBuses.length > 0 ? (
+                normalizedBuses.map((item, index) => renderTableRow(item, index))
+              ) : (
+                <View style={styles.emptyTable}>
+                  <MaterialCommunityIcons name="bus-alert" size={48} color="#e2e8f0" />
+                  <Text style={styles.emptyText}>
+                    {searchQuery ? `No results for "${searchQuery}"` : "No Vehicles Found"}
+                  </Text>
+                  {!searchQuery && (
+                    <TouchableOpacity onPress={openCreate} style={styles.emptyAddBtn}>
+                      <Ionicons name="add" size={16} color="#fff" />
+                      <Text style={styles.emptyAddBtnText}>Add First Bus</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )}
             </View>
-          )}
+          </ScrollView>
 
-          ListFooterComponent={() =>
-            buses.length > 0 ? (
-              <View className="mx-3 mt-1 mb-6">
-                <View className="flex-row items-center justify-between bg-white rounded-2xl px-4 py-3 border border-slate-100">
-                  <Text className="text-xs text-slate-400 font-bold">
-                    Page {page} / {totalPages} · {buses.length} of {totalItems}
-                  </Text>
-                  <View className="flex-row gap-2">
-                    <TouchableOpacity
-                      disabled={page <= 1}
-                      onPress={() => updatePagination("buses", { page: page - 1 })}
-                      className={`px-4 py-2 rounded-xl border ${
-                        page <= 1 ? "bg-slate-50 border-slate-200" : "bg-blue-900 border-blue-900"
-                      }`}
-                    >
-                      <Text className={`text-xs font-extrabold ${page <= 1 ? "text-slate-300" : "text-white"}`}>
-                        ← Prev
-                      </Text>
+          {normalizedBuses.length > 0 && (
+            <View style={styles.footerContainer}>
+              <View style={styles.footerRow}>
+                <TouchableOpacity onPress={() => setPageSizeModalVisible(true)} style={styles.pageSizeBtn}>
+                  <Text style={styles.pageSizeText}>{limit} rows</Text>
+                  <Ionicons name="chevron-down" size={12} color="#64748b" />
+                </TouchableOpacity>
+                <Text style={styles.entriesInfo}>Showing {startEntry} to {endEntry} of {totalItems} entries</Text>
+                <View style={styles.pagination}>
+                  <TouchableOpacity disabled={page <= 1}
+                    onPress={() => updatePagination("buses", { page: page - 1 })}
+                    style={[styles.paginationBtn, page <= 1 ? styles.paginationBtnDisabled : styles.paginationBtnActive]}>
+                    <Text style={[styles.paginationBtnText, page <= 1 ? styles.paginationTextDisabled : styles.paginationTextActive]}>Prev</Text>
+                  </TouchableOpacity>
+                  {getPageNumbers().map((p) => (
+                    <TouchableOpacity key={p} onPress={() => updatePagination("buses", { page: p })}
+                      style={[styles.pageNumBtn, p === page && styles.pageNumBtnActive]}>
+                      <Text style={[styles.pageNumText, p === page && styles.pageNumTextActive]}>{p}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      disabled={page >= totalPages}
-                      onPress={() => updatePagination("buses", { page: page + 1 })}
-                      className={`px-4 py-2 rounded-xl border ${
-                        page >= totalPages ? "bg-slate-50 border-slate-200" : "bg-blue-900 border-blue-900"
-                      }`}
-                    >
-                      <Text className={`text-xs font-extrabold ${page >= totalPages ? "text-slate-300" : "text-white"}`}>
-                        Next →
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  ))}
+                  <TouchableOpacity disabled={page >= totalPages}
+                    onPress={() => updatePagination("buses", { page: page + 1 })}
+                    style={[styles.paginationBtn, page >= totalPages ? styles.paginationBtnDisabled : styles.paginationBtnActive]}>
+                    <Text style={[styles.paginationBtnText, page >= totalPages ? styles.paginationTextDisabled : styles.paginationTextActive]}>Next</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-            ) : null
-          }
-        />
+            </View>
+          )}
+        </ScrollView>
       )}
 
-      {/* ── Form modal ────────────────────────────────────── */}
-      <BusForm
-        visible={modalVisible}
-        editingBus={editingBus}
-        form={form}
-        setForm={setForm}
-        saving={saving}
-        onSave={handleSave}
-        onClose={() => setModalVisible(false)}
-      />
+      <BusForm visible={modalVisible} editingBus={editingBus} form={form}
+        setForm={setForm} formErrors={formErrors} clearFieldError={clearFieldError}
+        saving={saving} onSave={handleSave} onClose={() => setModalVisible(false)} />
 
-      {/* ── View modal ────────────────────────────────────── */}
-      <ViewBusModal
-        visible={viewModalVisible}
-        bus={viewingBus}
-        onClose={() => setViewModalVisible(false)}
-      />
+      <ViewBusModal visible={viewModalVisible} bus={viewingBus} onClose={() => setViewModalVisible(false)} />
 
-      {/* Export modal – replaces the old absolute overlay */}
+      <PdfPreviewModal visible={pdfModalVisible} uri={pdfUri} onClose={() => setPdfModalVisible(false)} />
+
       <Portal>
-        <Modal
-          visible={exportModalVisible}
-          onDismiss={() => setExportModalVisible(false)}
-          contentContainerStyle={{
-            backgroundColor: "white",
-            marginHorizontal: 40,
-            borderRadius: 16,
-            padding: 16,
-          }}
-        >
-          <Text className="text-base font-black text-slate-800 mb-3">
-            Export Fleet Data
-          </Text>
+        <Modal visible={exportModalVisible} onDismiss={() => setExportModalVisible(false)} contentContainerStyle={styles.exportModal}>
+          <Text style={styles.exportModalTitle}>Export Fleet Data</Text>
+          <View style={styles.exportRangeRow}>
+            <Text style={styles.exportRangeLabel}>Range:</Text>
+            <TouchableOpacity onPress={() => setExportRange("page")}
+              style={[styles.exportRangeBtn, exportRange === "page" && styles.exportRangeBtnActive]}>
+              <Text style={[styles.exportRangeBtnText, exportRange === "page" && styles.exportRangeBtnTextActive]}>Current Page</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setExportRange("all")}
+              style={[styles.exportRangeBtn, exportRange === "all" && styles.exportRangeBtnActive]}>
+              <Text style={[styles.exportRangeBtnText, exportRange === "all" && styles.exportRangeBtnTextActive]}>All Data</Text>
+            </TouchableOpacity>
+          </View>
           {[
             { key: "csv", icon: "grid-outline", label: "Export CSV" },
+            { key: "xls", icon: "tablet-landscape-outline", label: "Export Excel" },
             { key: "pdf", icon: "document-text-outline", label: "Export PDF" },
           ].map(({ key, icon, label }) => (
-            <TouchableOpacity
-              key={key}
-              onPress={() => handleExport(key)}
-              className="flex-row items-center gap-3 px-4 py-3 border-b border-slate-100"
-            >
+            <TouchableOpacity key={key} onPress={() => handleExport(key)} style={styles.exportOption}>
               <Ionicons name={icon} size={18} color="#1e3a8a" />
-              <Text className="text-sm font-bold text-slate-800">{label}</Text>
+              <Text style={styles.exportOptionText}>{label}</Text>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity
-            onPress={() => setExportModalVisible(false)}
-            className="mt-2 items-center py-2"
-          >
-            <Text className="text-xs font-bold text-slate-400">Cancel</Text>
+          <TouchableOpacity onPress={() => setExportModalVisible(false)} style={styles.exportCancel}>
+            <Text style={styles.exportCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </Modal>
+      </Portal>
+
+      <Portal>
+        <Modal visible={pageSizeModalVisible} onDismiss={() => setPageSizeModalVisible(false)} contentContainerStyle={styles.pageSizeModal}>
+          <Text style={styles.exportModalTitle}>Rows Per Page</Text>
+          {PAGE_SIZES.map((size) => (
+            <TouchableOpacity key={size} onPress={() => handlePageSizeChange(size)}
+              style={[styles.pageSizeOption, limit === size && styles.pageSizeOptionActive]}>
+              <Text style={[styles.pageSizeOptionText, limit === size && styles.pageSizeOptionTextActive]}>{size}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={() => setPageSizeModalVisible(false)} style={styles.exportCancel}>
+            <Text style={styles.exportCancelText}>Cancel</Text>
           </TouchableOpacity>
         </Modal>
       </Portal>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+  flexGrow: { flexGrow: 1 },
+  screen: { flex: 1, backgroundColor: "#F8FAFC" },
+  fieldError: { fontSize: 10, color: "#EF4444", fontWeight: "600", marginTop: 4, marginLeft: 4 },
+  sectionLabel: {
+    color: "#1E3A8A", fontSize: 10, fontWeight: "900", textTransform: "uppercase",
+    letterSpacing: 2, marginTop: 20, marginBottom: 8,
+  },
+  pillRowContainer: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },
+  pill: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 9999, borderWidth: 1 },
+  pillInactive: { backgroundColor: "#F1F5F9", borderColor: "#E2E8F0" },
+  pillText: { fontSize: 10, fontWeight: "800" },
+  pillTextActive: { color: "#FFFFFF" },
+  pillTextInactive: { color: "#64748B" },
+  amenityChip: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1 },
+  amenityChipActive: { backgroundColor: "#DBEAFE", borderColor: "#60A5FA" },
+  amenityChipInactive: { backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" },
+  amenityChipText: { fontSize: 10, fontWeight: "700" },
+  amenityChipTextActive: { color: "#1D4ED8" },
+  amenityChipTextInactive: { color: "#94A3B8" },
+  statusBadgeContainer: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: "flex-start" },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusLabel: { fontSize: 9, fontWeight: "900" },
+  modalContent: { backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%" },
+  modalHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
+  },
+  modalTitle: { fontSize: 16, fontWeight: "900", color: "#0F172A" },
+  modalSubtitle: { fontSize: 10, color: "#94A3B8", marginTop: 2 },
+  closeBtn: { width: 36, height: 36, backgroundColor: "#F1F5F9", borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  formRow: { flexDirection: "row", gap: 8 },
+  formRowItem: { flex: 1 },
+  formActions: { flexDirection: "row", gap: 12, marginTop: 16, marginBottom: 40 },
+  cancelBtn: { flex: 1, paddingVertical: 16, borderRadius: 16, alignItems: "center", backgroundColor: "#F1F5F9", borderWidth: 1, borderColor: "#E2E8F0" },
+  cancelBtnText: { fontWeight: "800", color: "#64748B", fontSize: 12 },
+  saveBtn: {
+    flex: 2, paddingVertical: 16, borderRadius: 16, alignItems: "center", backgroundColor: "#1E3A8A",
+    shadowColor: "#1e3a8a", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
+  },
+  saveBtnText: { fontWeight: "900", color: "#FFFFFF", fontSize: 12 },
+  datePickerBtn: {
+    backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 14,
+    paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12, flexDirection: "row",
+    alignItems: "center", justifyContent: "space-between",
+  },
+  datePickerText: { fontSize: 12, fontWeight: "700", color: "#64748B" },
+  viewField: { marginBottom: 12 },
+  viewFieldLabel: { fontSize: 10, fontWeight: "700", color: "#64748B", marginBottom: 4 },
+  viewFieldValue: { fontSize: 12, fontWeight: "600", color: "#0F172A" },
+  amenityListView: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  amenityChipSmallView: { backgroundColor: "#DBEAFE", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  amenityChipSmallTextView: { fontSize: 10, fontWeight: "800", color: "#1D4ED8" },
+  header: { backgroundColor: "#1E3A8A", paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  headerTitle: { fontSize: 18, fontWeight: "900", color: "#FFFFFF", letterSpacing: -0.5 },
+  headerCount: { fontSize: 10, color: "#93C5FD", fontWeight: "600", marginTop: 2 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  exportBtn: {
+    width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.15)",
+  },
+  addBtn: {
+    flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16, height: 44, borderRadius: 14,
+  },
+  addBtnText: { fontWeight: "900", color: "#1E3A8A", fontSize: 10 },
+  searchbar: { backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 14, height: 46 },
+  searchbarInput: { fontSize: 13, fontWeight: "600", color: "#fff" },
+  loadingContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+  loadingText: { marginTop: 12, color: "#94A3B8", fontWeight: "700", fontSize: 12 },
+  statsBar: {
+    backgroundColor: "#FFFFFF", flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
+  },
+  statBox: { flex: 1, alignItems: "center", paddingVertical: 12 },
+  statBoxBorder: { borderRightWidth: 1, borderRightColor: "#F1F5F9" },
+  statValue: { fontSize: 18, fontWeight: "900", color: "#1E3A8A" },
+  statLabel: { fontSize: 9, color: "#94A3B8", fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, marginTop: 2 },
+  emptyTable: { alignItems: "center", paddingTop: 64, paddingBottom: 40, paddingHorizontal: 20 },
+  emptyText: { marginTop: 12, color: "#94A3B8", fontWeight: "800", fontSize: 14, textAlign: "center" },
+  emptyAddBtn: {
+    marginTop: 16, flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: "#1E3A8A", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 16,
+  },
+  emptyAddBtnText: { color: "#FFFFFF", fontWeight: "900", fontSize: 12 },
+  footerContainer: {
+    backgroundColor: "#FFFFFF", borderTopWidth: 1, borderTopColor: "#F1F5F9",
+    paddingHorizontal: 16, paddingVertical: 12,
+  },
+  footerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 },
+  pageSizeBtn: {
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "#F1F5F9", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8,
+  },
+  pageSizeText: { fontSize: 10, fontWeight: "700", color: "#475569" },
+  entriesInfo: { fontSize: 10, fontWeight: "700", color: "#64748B", textAlign: "center" },
+  pagination: { flexDirection: "row", alignItems: "center", gap: 4 },
+  paginationBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
+  paginationBtnDisabled: { backgroundColor: "#F8FAFC", borderColor: "#E2E8F0" },
+  paginationBtnActive: { backgroundColor: "#1E3A8A", borderColor: "#1E3A8A" },
+  paginationBtnText: { fontSize: 10, fontWeight: "800" },
+  paginationTextDisabled: { color: "#CBD5E1" },
+  paginationTextActive: { color: "#FFFFFF" },
+  pageNumBtn: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center", backgroundColor: "#F8FAFC" },
+  pageNumBtnActive: { backgroundColor: "#1E3A8A" },
+  pageNumText: { fontSize: 10, fontWeight: "800", color: "#64748B" },
+  pageNumTextActive: { color: "#FFFFFF" },
+  exportModal: { backgroundColor: "white", marginHorizontal: 40, borderRadius: 16, padding: 16 },
+  exportModalTitle: { fontSize: 14, fontWeight: "900", color: "#1E293B", marginBottom: 12 },
+  exportOption: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
+  },
+  exportOptionText: { fontSize: 12, fontWeight: "700", color: "#1E293B" },
+  exportRangeRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12, paddingHorizontal: 16 },
+  exportRangeLabel: { fontSize: 11, fontWeight: "700", color: "#64748B", marginRight: 4 },
+  exportRangeBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: "#E2E8F0", backgroundColor: "#F8FAFC" },
+  exportRangeBtnActive: { backgroundColor: "#1E3A8A", borderColor: "#1E3A8A" },
+  exportRangeBtnText: { fontSize: 10, fontWeight: "800", color: "#64748B" },
+  exportRangeBtnTextActive: { color: "#FFFFFF" },
+  exportCancel: { marginTop: 8, alignItems: "center", paddingVertical: 8 },
+  exportCancelText: { fontSize: 10, fontWeight: "700", color: "#94A3B8" },
+  pageSizeModal: { backgroundColor: "white", marginHorizontal: 100, borderRadius: 16, padding: 16 },
+  pageSizeOption: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F1F5F9", alignItems: "center" },
+  pageSizeOptionActive: { backgroundColor: "#EFF6FF" },
+  pageSizeOptionText: { fontSize: 14, fontWeight: "700", color: "#1E293B" },
+  pageSizeOptionTextActive: { color: "#1E3A8A" },
+  tableScroll: { flex: 1 },
+  tableContainer: { minWidth: 700, paddingHorizontal: 12 },
+  tableHeaderRow: {
+    flexDirection: "row", backgroundColor: "#1E3A8A", borderRadius: 12,
+    marginTop: 12, marginBottom: 4, overflow: "hidden",
+  },
+  tableHeaderCell: { paddingVertical: 12, paddingHorizontal: 8 },
+  tableHeaderContent: { flexDirection: "row", alignItems: "center" },
+  tableHeaderText: { fontSize: 9, fontWeight: "900", color: "#FFFFFF", textTransform: "uppercase", letterSpacing: 0.5 },
+  tableRow: {
+    flexDirection: "row", backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1, borderBottomColor: "#F1F5F9", minHeight: 52, alignItems: "center",
+  },
+  tableRowAlt: { backgroundColor: "#FAFBFC" },
+  tableCell: { paddingVertical: 10, paddingHorizontal: 8, justifyContent: "center" },
+  cellBusNumber: { fontSize: 12, fontWeight: "900", color: "#0F172A" },
+  cellText: { fontSize: 11, fontWeight: "600", color: "#475569" },
+  cellType: { fontSize: 10, fontWeight: "700", color: "#64748B" },
+  cellDate: { fontSize: 10, fontWeight: "600", color: "#64748B" },
+  actionBtn: {
+    width: 28, height: 28, borderRadius: 8, backgroundColor: "#F1F5F9",
+    alignItems: "center", justifyContent: "center",
+  },
+  pdfModalContent: { backgroundColor: "#fff", margin: 14, borderRadius: 24, height: "85%" },
+  pdfModalHeader: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
+  },
+  pdfModalTitle: { fontSize: 16, fontWeight: "900", color: "#0F172A" },
+  pdfContainer: { flex: 1, margin: 12, borderRadius: 12, overflow: "hidden" },
+});

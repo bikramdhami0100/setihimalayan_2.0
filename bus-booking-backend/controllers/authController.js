@@ -47,6 +47,7 @@ export const login = async (req, res, next) => {
             full_name: user.full_name,
             phone: user.phone,
             role: user.role,
+            profile_image: user.profile_image,
             is_email_verified: user.is_email_verified
         };
 
@@ -88,13 +89,15 @@ export const getProfile = async (req, res, next) => {
 
 export const updateProfile = async (req, res, next) => {
     try {
-        const { full_name, date_of_birth, address, city, state, country, postal_code } = req.body;
+        const { full_name, phone, date_of_birth, address, city, state, country, postal_code } = req.body;
         const updateData = { full_name, date_of_birth, address, city, state, country, postal_code };
+        if (phone !== undefined) updateData.phone = phone;
         // Remove undefined fields
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
         await User.updateProfile(req.user.id, updateData);
-        successResponse(res, 'Profile updated successfully');
+        const user = await User.findById(req.user.id);
+        successResponse(res, 'Profile updated successfully', { user });
     } catch (err) {
         next(err);
     }

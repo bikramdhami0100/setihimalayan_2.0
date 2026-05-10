@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext } from "react";
 import {
   View,
@@ -9,9 +8,12 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
+  StatusBar,
+  StyleSheet,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import Animated, { FadeInUp } from "react-native-reanimated";
 import dayjs from "dayjs";
 import { getSeatLayout, getScheduleById } from "../../api/schedules";
 import { useSocket } from "../../hooks/useSocket";
@@ -19,31 +21,20 @@ import { BookingContext } from "../../context/BookingContext";
 import { UIContext } from "../../context/UIContext";
 
 const { width } = Dimensions.get("window");
-const SEAT_SIZE = Math.min(48, (width - 100) / 5);
+const SEAT_SIZE = Math.min(48, (width - 120) / 5);
 const AISLE_WIDTH = SEAT_SIZE * 0.5;
-const ROW_LABEL_WIDTH = 24;
 
-// -------------------------------------------------------------------
-// Helper: Map old numeric IDs to new A/B scheme
-// -------------------------------------------------------------------
 const transformSeatIds = (layoutRows) => {
-  // Assume a 2x2 layout: 4 columns per row, left=2, right=2
   const leftCols = 2;
   const rightCols = 2;
   const rows = layoutRows.length;
-
-  // Build a full mapping for this layout
   const oldToNew = {};
   let aCounter = 1;
   let bCounter = 1;
 
-  // We need to iterate in the order the old IDs were originally assigned:
-  // The fallback and the flat-to-rows logic both use row-major order:
-  // For each row, left seats first then right seats.
-  // So we'll generate the mapping by simulating that order.
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < leftCols; c++) {
-      const oldId = r * (leftCols + rightCols) + c + 1; // original flat index +1
+      const oldId = r * (leftCols + rightCols) + c + 1;
       oldToNew[oldId] = `A${aCounter++}`;
     }
     for (let c = leftCols; c < leftCols + rightCols; c++) {
@@ -52,7 +43,6 @@ const transformSeatIds = (layoutRows) => {
     }
   }
 
-  // Transform the seat objects in place
   const newLayout = layoutRows.map((row) =>
     row.map((seat) => {
       if (seat && seat.id) {
@@ -68,12 +58,31 @@ const transformSeatIds = (layoutRows) => {
   return { newLayout, oldToNew };
 };
 
-// Helper: transform an array of old seat IDs to new ones
 const transformSeatIdArray = (idArray, oldToNew) => {
   return idArray.map((id) => {
     const numeric = Number(id);
     return oldToNew[numeric] || id;
   });
+};
+
+const amenityIcons = {
+  ac: { icon: "snow-outline", lib: Ionicons },
+  wifi: { icon: "wifi-outline", lib: Ionicons },
+  tv: { icon: "television", lib: MaterialCommunityIcons },
+  reclining: { icon: "bed-outline", lib: Ionicons },
+  charging: { icon: "flash-outline", lib: Ionicons },
+  blanket: { icon: "layers-outline", lib: Ionicons },
+  water: { icon: "water-outline", lib: Ionicons },
+  snack: { icon: "fast-food-outline", lib: Ionicons },
+};
+
+const getAmenityIcon = (amenity) => {
+  const key = amenity.toLowerCase().replace(/\s+/g, "");
+  const match = amenityIcons[key];
+  if (match) return match;
+  const generic = amenityIcons[Object.keys(amenityIcons).find((k) => key.includes(k))];
+  if (generic) return generic;
+  return { icon: "star-outline", lib: Ionicons };
 };
 
 export default function SeatSelection() {
@@ -102,23 +111,19 @@ export default function SeatSelection() {
         let rawLayout = data.seat_layout;
         let seatRows = [];
 
-        // --- CASE 1: API returns a valid array of seats ---
         if (Array.isArray(rawLayout) && rawLayout.length > 0) {
           if (Array.isArray(rawLayout[0])) {
             seatRows = rawLayout;
           } else {
-            // Flat array -> rows of 4
             const rows = [];
             for (let i = 0; i < rawLayout.length; i += 4) {
               rows.push(rawLayout.slice(i, i + 4));
             }
             seatRows = rows;
           }
-        }
-        // --- CASE 2: Fallback dummy layout (makes testing possible) ---
-        else {
+        } else {
           const dummySeats = Array.from({ length: 40 }, (_, i) => ({
-            id: (i + 1).toString(),                // will be replaced below
+            id: (i + 1).toString(),
             status: i % 7 === 0 ? "women" : "available",
           }));
           const rows = [];
@@ -128,12 +133,10 @@ export default function SeatSelection() {
           seatRows = rows;
         }
 
-        // --- TRANSFORM to A / B naming ---
         if (seatRows.length > 0) {
           const { newLayout, oldToNew } = transformSeatIds(seatRows);
           setSeatLayout(newLayout);
 
-          // Also transform the locked/booked arrays from the API
           const lockedRaw = data.locked_seats || [];
           const bookedRaw = data.booked_seats || [];
           setLockedSeats(transformSeatIdArray(lockedRaw, oldToNew));
@@ -152,7 +155,6 @@ export default function SeatSelection() {
 
     fetchData();
 
-    // Socket listeners stay the same
     if (socket) {
       const handleSeatsLocked = (data) => {
         if (data.scheduleId == scheduleId) {
@@ -218,40 +220,21 @@ export default function SeatSelection() {
 
   const renderSeat = (seat, rowIdx, colIdx) => {
     if (!seat)
-      return (
-        <View
-          key={`empty-${rowIdx}-${colIdx}`}
-          style={{ width: SEAT_SIZE, margin: 3 }}
-        />
-      );
+      return <View key={`empty-${rowIdx}-${colIdx}`} style={{ width: SEAT_SIZE, margin: 3 }} />;
 
     const status = getSeatStatus(seat);
-    let bgColor, borderColor, textColor;
-
-    switch (status) {
-      case "selected":
-        bgColor = "bg-[#ff8a4c]";
-        borderColor = "border-[#ff8a4c]";
-        textColor = "text-white";
-        break;
-      case "booked":
-      case "locked":
-        bgColor = "bg-gray-100";
-        borderColor = "border-gray-200";
-        textColor = "text-gray-400";
-        break;
-      case "women":
-        bgColor = "bg-pink-50";
-        borderColor = "border-pink-200";
-        textColor = "text-pink-600";
-        break;
-      default:
-        bgColor = "bg-white";
-        borderColor = "border-gray-300";
-        textColor = "text-gray-700";
-    }
-
     const isDisabled = status === "booked" || status === "locked";
+
+    const seatStyles = {
+      empty: { bg: "#fff", border: "#e2e8f0", text: "#475569" },
+      available: { bg: "#fff", border: "#cbd5e1", text: "#475569" },
+      selected: { bg: "#ff8a4c", border: "#ff8a4c", text: "#fff" },
+      booked: { bg: "#f1f5f9", border: "#e2e8f0", text: "#94a3b8" },
+      locked: { bg: "#fef2f2", border: "#fecaca", text: "#ef4444" },
+      women: { bg: "#fdf2f8", border: "#fbcfe8", text: "#db2777" },
+    };
+
+    const s = seatStyles[status] || seatStyles.available;
 
     return (
       <TouchableOpacity
@@ -259,17 +242,20 @@ export default function SeatSelection() {
         activeOpacity={0.7}
         disabled={isDisabled}
         onPress={() => toggleSeat(seat.id, status === "booked", status === "locked")}
-        style={{ width: SEAT_SIZE, margin: 3 }}
-        className={`rounded-lg items-center justify-center py-1.5 ${bgColor} border ${borderColor}`}
+        style={[styles.seat, { width: SEAT_SIZE, backgroundColor: s.bg, borderColor: s.border }]}
       >
-        <Text className={`text-xs font-semibold ${textColor}`}>{seat.id}</Text>
-        {status === "women" && !isDisabled && (
-          <View className="absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-pink-500" />
-        )}
-        {(status === "booked" || status === "locked") && (
-          <View className="absolute inset-0 items-center justify-center">
-            <View className="w-6 h-px bg-gray-400 rotate-45 absolute" />
-            <View className="w-6 h-px bg-gray-400 -rotate-45 absolute" />
+        {status === "booked" || status === "locked" ? (
+          <View style={styles.seatCross}>
+            <View style={[styles.crossLine, { transform: [{ rotate: "45deg" }] }]} />
+            <View style={[styles.crossLine, { transform: [{ rotate: "-45deg" }] }]} />
+          </View>
+        ) : status === "women" ? (
+          <View style={styles.womenDot} />
+        ) : null}
+        <Text style={[styles.seatLabel, { color: s.text }]}>{seat.id}</Text>
+        {status === "selected" && (
+          <View style={styles.selectedCheck}>
+            <Ionicons name="checkmark" size={8} color="#fff" />
           </View>
         )}
       </TouchableOpacity>
@@ -290,9 +276,12 @@ export default function SeatSelection() {
 
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-[#f8fafc] justify-center items-center">
-        <ActivityIndicator size="large" color="#ff8a4c" />
-        <Text className="mt-4 text-gray-500 font-medium">Loading seat map...</Text>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ff8a4c" />
+          <Text style={styles.loadingText}>Loading seat map...</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -302,6 +291,9 @@ export default function SeatSelection() {
   const durationHours = scheduleData?.duration_minutes
     ? Math.floor(scheduleData.duration_minutes / 60)
     : arrival.diff(departure, "hour");
+  const durationMinutes = scheduleData?.duration_minutes
+    ? scheduleData.duration_minutes % 60
+    : 0;
 
   let amenities = [];
   try {
@@ -310,177 +302,759 @@ export default function SeatSelection() {
     amenities = [];
   }
 
-  const bottomBarHeight = Platform.OS === "ios" ? 130 : 110;
+  const totalFare = selectedSeats.length * (scheduleData?.base_price || 0);
+  const bottomBarHeight = Platform.OS === "ios" ? 140 : 120;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="flex-1 bg-[#f8fafc]">
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
+
+      <View style={styles.topCircle} />
+
       <ScrollView
-        className="flex-1"
         showsVerticalScrollIndicator={false}
+        bounces={false}
         contentContainerStyle={{ paddingBottom: bottomBarHeight + 20 }}
       >
-        {/* Header */}
-        <View className="bg-white px-5 pt-4 pb-3 border-b border-gray-100">
-          <View className="flex-row items-center justify-between">
-            <TouchableOpacity onPress={() => router.back()} className="p-1">
-              <Ionicons name="arrow-back" size={24} color="#1e293b" />
+        <Animated.View entering={FadeInUp.duration(800).delay(100)} style={styles.header}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+              <Ionicons name="arrow-back" size={22} color="#1e3a8a" />
             </TouchableOpacity>
-            <View className="flex-1 ml-3">
-              <Text className="text-lg font-bold text-gray-800">
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.brandText}>SETI HIMALAYAN</Text>
+              <Text style={styles.headerTitle}>Select Your Seats</Text>
+            </View>
+            <TouchableOpacity style={styles.helpBtn}>
+              <Ionicons name="help-circle-outline" size={22} color="#1e3a8a" />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.duration(800).delay(200)} style={styles.tripCard}>
+          <View style={styles.routeHeader}>
+            <View style={styles.routeIconWrap}>
+              <MaterialCommunityIcons name="bus" size={20} color="#1e3a8a" />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.routeTitle}>
                 {scheduleData?.origin} → {scheduleData?.destination}
               </Text>
-              <Text className="text-xs text-gray-500 mt-0.5">
+              <Text style={styles.routeSubtitle}>
                 {scheduleData?.bus_number} • {scheduleData?.bus_type}
               </Text>
             </View>
           </View>
 
-          <View className="flex-row justify-between mt-3 bg-gray-50 p-3 rounded-xl">
-            <View>
-              <Text className="text-[10px] font-bold text-gray-400 uppercase">Departure</Text>
-              <Text className="text-sm font-semibold text-gray-800">
-                {departure.format("DD MMM, hh:mm A")}
-              </Text>
-              <Text className="text-xs text-gray-500">{departure.format("ddd")}</Text>
+          <View style={styles.timeline}>
+            <View style={styles.timelineLeft}>
+              <View style={styles.timelineDot} />
+              <View style={styles.timelineLine} />
+              <View style={[styles.timelineDot, styles.timelineDotEnd]} />
             </View>
-            <View className="items-center">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase">Duration</Text>
-              <View className="flex-row items-center">
-                <Text className="text-sm font-semibold text-gray-800">{durationHours}h</Text>
-                <Feather name="clock" size={12} color="#94a3b8" className="ml-1" />
+            <View style={styles.timelineRight}>
+              <View style={styles.timeRow}>
+                <Text style={styles.timeLabel}>DEPARTURE</Text>
+                <Text style={styles.timeValue}>{departure.format("hh:mm A")}</Text>
+                <Text style={styles.timeDate}>{departure.format("DD MMM YYYY, ddd")}</Text>
               </View>
-            </View>
-            <View className="items-end">
-              <Text className="text-[10px] font-bold text-gray-400 uppercase">Arrival</Text>
-              <Text className="text-sm font-semibold text-gray-800">
-                {arrival.format("DD MMM, hh:mm A")}
-              </Text>
-              <Text className="text-xs text-gray-500">{arrival.format("ddd")}</Text>
+              <View style={styles.durationBadge}>
+                <Feather name="clock" size={12} color="#ff8a4c" />
+                <Text style={styles.durationText}>
+                  {durationHours}h {durationMinutes > 0 ? `${durationMinutes}m` : ""}
+                </Text>
+              </View>
+              <View style={[styles.timeRow, { alignItems: "flex-end" }]}>
+                <Text style={styles.timeLabel}>ARRIVAL</Text>
+                <Text style={styles.timeValue}>{arrival.format("hh:mm A")}</Text>
+                <Text style={styles.timeDate}>{arrival.format("DD MMM YYYY, ddd")}</Text>
+              </View>
             </View>
           </View>
 
           {amenities.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
-              {amenities.map((item, idx) => (
-                <View key={idx} className="bg-gray-100 rounded-full px-3 py-1 mr-2 flex-row items-center">
-                  {item.toLowerCase() === "ac" && <Ionicons name="snow-outline" size={12} color="#0284c7" />}
-                  {item.toLowerCase() === "wifi" && <Ionicons name="wifi-outline" size={12} color="#0284c7" />}
-                  {item.toLowerCase() === "tv" && <MaterialCommunityIcons name="television" size={12} color="#0284c7" />}
-                  <Text className="text-xs text-gray-600 ml-1">{item}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-
-        {/* Seat Map Card */}
-        <View className="px-4 pt-6">
-          <View className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-            <View className="items-end mb-3">
-              <View className="bg-gray-100 p-2 rounded-lg w-12 items-center">
-                <MaterialCommunityIcons name="steering" size={20} color="#64748b" />
-                <Text className="text-[9px] text-gray-500 mt-0.5">Driver</Text>
-              </View>
+            <View style={styles.amenitiesWrap}>
+              {amenities.map((item, idx) => {
+                const { icon, lib: IconLib } = getAmenityIcon(item);
+                return (
+                  <View key={idx} style={styles.amenityTag}>
+                    <IconLib name={icon} size={11} color="#0284c7" />
+                    <Text style={styles.amenityText}>{item}</Text>
+                  </View>
+                );
+              })}
             </View>
+          )}
+        </Animated.View>
 
-            {seatLayout.length === 0 ? (
-              <View className="py-20 items-center">
-                <Text className="text-gray-400">No seat layout available</Text>
+        <Animated.View entering={FadeInUp.duration(800).delay(300)} style={styles.sectionHeader}>
+          <View style={styles.sectionBar} />
+          <Text style={styles.sectionTitle}>Choose Your Seats</Text>
+          <Text style={styles.sectionSubtitle}>{seatLayout.length} rows available</Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInUp.duration(800).delay(400)} style={styles.seatMapCard}>
+          <View style={styles.driverArea}>
+            <View style={styles.driverIconWrap}>
+              <MaterialCommunityIcons name="steering" size={22} color="#64748b" />
+            </View>
+            <View style={styles.driverLine} />
+            <Text style={styles.driverLabel}>DRIVER</Text>
+          </View>
+
+          {seatLayout.length === 0 ? (
+            <View style={styles.emptyLayout}>
+              <MaterialCommunityIcons name="seat-outline" size={48} color="#cbd5e1" />
+              <Text style={styles.emptyLayoutText}>No seat layout available</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.colHeaders}>
+                <Text style={styles.colHeaderText}>Left</Text>
+                <View style={{ width: AISLE_WIDTH }} />
+                <Text style={styles.colHeaderText}>Right</Text>
               </View>
-            ) : (
-              seatLayout.map((row, rowIdx) => (
-                <View key={rowIdx} className="flex-row items-center justify-center mb-1">
-                  {/* Left seats (A section) */}
-                  <View className="flex-row">
+
+              {seatLayout.map((row, rowIdx) => (
+                <View key={rowIdx} style={styles.seatRow}>
+                  <View style={styles.seatGroup}>
                     {row.slice(0, 2).map((seat, colIdx) => renderSeat(seat, rowIdx, colIdx))}
                   </View>
-                  {/* Aisle */}
                   <View style={{ width: AISLE_WIDTH }} />
-                  {/* Right seats (B section) */}
-                  <View className="flex-row">
+                  <View style={styles.seatGroup}>
                     {row.slice(2, 4).map((seat, colIdx) =>
                       renderSeat(seat, rowIdx, colIdx + 2)
                     )}
                   </View>
                 </View>
-              ))
-            )}
+              ))}
+            </>
+          )}
 
-            {/* Legend */}
-            <View className="mt-5 pt-3 border-t border-gray-100">
-              <View className="flex-row flex-wrap justify-between">
-                {[
-                  { label: "Available", bg: "bg-white", border: "border-gray-300" },
-                  { label: "Selected", bg: "bg-[#ff8a4c]", border: "border-[#ff8a4c]" },
-                  { label: "Booked/Locked", bg: "bg-gray-100", border: "border-gray-200", cross: true },
-                  { label: "Women-only", bg: "bg-pink-50", border: "border-pink-200", dot: true },
-                ].map((item, idx) => (
-                  <View key={idx} className="flex-row items-center mr-3 mb-2">
-                    <View
-                      className={`w-5 h-5 rounded-md ${item.bg} border ${item.border} items-center justify-center`}
-                    >
-                      {item.cross && (
-                        <View className="w-3 h-px bg-gray-400 rotate-45 absolute" />
-                      )}
-                      {item.dot && (
-                        <View className="w-1.5 h-1.5 rounded-full bg-pink-500 absolute top-0.5 right-0.5" />
-                      )}
-                    </View>
-                    <Text className="text-[11px] text-gray-500 ml-1.5">{item.label}</Text>
+          <View style={styles.legendCard}>
+            <View style={styles.legendTitleRow}>
+              <Ionicons name="information-circle-outline" size={14} color="#64748b" />
+              <Text style={styles.legendTitle}>SEAT STATUS</Text>
+            </View>
+            <View style={styles.legendGrid}>
+              {[
+                {
+                  label: "Available", bg: "#fff", border: "#cbd5e1",
+                  icon: null,
+                },
+                {
+                  label: "Selected", bg: "#ff8a4c", border: "#ff8a4c",
+                  icon: <Ionicons name="checkmark" size={8} color="#fff" />,
+                },
+                {
+                  label: "Booked", bg: "#f1f5f9", border: "#e2e8f0",
+                  icon: (
+                    <View style={{ width: 10, height: 2, backgroundColor: "#94a3b8", borderRadius: 1 }} />
+                  ),
+                },
+                {
+                  label: "Women", bg: "#fdf2f8", border: "#fbcfe8",
+                  icon: <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: "#db2777" }} />,
+                },
+                {
+                  label: "Locked", bg: "#fef2f2", border: "#fecaca",
+                  icon: <Ionicons name="lock-closed" size={8} color="#ef4444" />,
+                },
+              ].map((item, idx) => (
+                <View key={idx} style={styles.legendItem}>
+                  <View style={[styles.legendSwatch, { backgroundColor: item.bg, borderColor: item.border }]}>
+                    {item.icon}
+                  </View>
+                  <Text style={styles.legendLabel}>{item.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+
+        {selectedSeats.length > 0 && (
+          <Animated.View entering={FadeInUp.duration(800).delay(500)} style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
+              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+              <Text style={styles.summaryTitle}>Your Selection</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <View style={styles.summarySeats}>
+                {selectedSeats.map((seat) => (
+                  <View key={seat} style={styles.selectedSeatTag}>
+                    <MaterialCommunityIcons name="seat" size={14} color="#fff" />
+                    <Text style={styles.selectedSeatText}>{seat}</Text>
                   </View>
                 ))}
               </View>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        )}
+
+        <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Fixed Bottom Bar */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 pt-2 pb-5 px-5 shadow-2xl">
-        <View className="flex-row justify-between items-end mb-3">
-          <View>
-            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              Selected Seats
-            </Text>
-            <View className="flex-row mt-1 flex-wrap">
-              {selectedSeats.length > 0 ? (
-                selectedSeats.map((seat) => (
-                  <View key={seat} className="bg-[#ff8a4c] rounded-md px-2 py-1 mr-1.5 mb-1">
-                    <Text className="text-white text-xs font-bold">{seat}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text className="text-gray-400 text-xs">None</Text>
-              )}
-            </View>
-          </View>
-          <View className="items-end">
-            <Text className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              Total Fare
-            </Text>
-            <Text className="text-xl font-extrabold text-gray-800">
-              NPR {(selectedSeats.length * (scheduleData?.base_price || 0)).toLocaleString()}
-            </Text>
-            <Text className="text-[10px] text-gray-400">
-              per seat: NPR {parseInt(scheduleData?.base_price || 0).toLocaleString()}
+      <View style={styles.bottomBar}>
+        <View style={styles.bottomBarInner}>
+          <View style={styles.fareSection}>
+            <Text style={styles.fareLabel}>Total Fare</Text>
+            <Text style={styles.fareValue}>NPR {totalFare.toLocaleString()}</Text>
+            <Text style={styles.perSeatText}>
+              {selectedSeats.length > 0
+                ? `${selectedSeats.length} seat${selectedSeats.length > 1 ? "s" : ""} × NPR ${parseInt(scheduleData?.base_price || 0).toLocaleString()}`
+                : "per seat: NPR " + parseInt(scheduleData?.base_price || 0).toLocaleString()}
             </Text>
           </View>
+
+          <TouchableOpacity
+            style={[
+              styles.continueBtn,
+              selectedSeats.length === 0 && styles.continueBtnDisabled,
+            ]}
+            disabled={selectedSeats.length === 0}
+            onPress={handleContinue}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.continueBtnText}>Continue</Text>
+            <Ionicons name="arrow-forward" size={18} color="#fff" />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          className={`rounded-full py-3 flex-row justify-center items-center shadow-sm ${
-            selectedSeats.length > 0 ? "bg-[#ff8a4c]" : "bg-gray-300"
-          }`}
-          disabled={selectedSeats.length === 0}
-          onPress={handleContinue}
-        >
-          <Text className="text-white text-base font-bold mr-2">Continue</Text>
-          <Ionicons name="arrow-forward" size={18} color="white" />
-        </TouchableOpacity>
-        <Text className="text-center text-[10px] text-gray-400 mt-1.5">
-          You can select up to 4 seats
-        </Text>
+        <View style={styles.bottomHint}>
+          <Ionicons name="information-circle" size={11} color="#94a3b8" />
+          <Text style={styles.hintText}>You can select up to 4 seats</Text>
+        </View>
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+  },
+  topCircle: {
+    position: "absolute",
+    top: -width * 0.5,
+    right: -width * 0.25,
+    width: width * 1.3,
+    height: width * 1.3,
+    borderRadius: width * 0.65,
+    backgroundColor: "#e0f2fe",
+    zIndex: -1,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    color: "#64748b",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "ios" ? 8 : 16,
+    paddingBottom: 4,
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  backBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  brandText: {
+    color: "#1e3a8a",
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1.5,
+    marginBottom: 2,
+  },
+  headerTitle: {
+    color: "#0f172a",
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  helpBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+
+  tripCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#1e3a8a",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+  },
+  routeHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  routeIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#eff6ff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  routeTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#0f172a",
+  },
+  routeSubtitle: {
+    fontSize: 12,
+    color: "#64748b",
+    marginTop: 2,
+    fontWeight: "500",
+  },
+
+  timeline: {
+    flexDirection: "row",
+    marginBottom: 14,
+  },
+  timelineLeft: {
+    alignItems: "center",
+    width: 24,
+    marginRight: 12,
+  },
+  timelineDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#1e3a8a",
+    borderWidth: 2,
+    borderColor: "#dbeafe",
+  },
+  timelineDotEnd: {
+    backgroundColor: "#ff8a4c",
+    borderColor: "#fed7aa",
+  },
+  timelineLine: {
+    flex: 1,
+    width: 2,
+    backgroundColor: "#dbeafe",
+    marginVertical: 4,
+  },
+  timelineRight: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  timeRow: {
+    alignItems: "flex-start",
+  },
+  timeLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#94a3b8",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  timeValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0f172a",
+  },
+  timeDate: {
+    fontSize: 11,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  durationBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    gap: 6,
+    backgroundColor: "#fff7ed",
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#fed7aa",
+    marginVertical: 6,
+  },
+  durationText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#ff8a4c",
+  },
+
+  amenitiesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+  },
+  amenityTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#f0f9ff",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e0f2fe",
+  },
+  amenityText: {
+    fontSize: 11,
+    color: "#0369a1",
+    fontWeight: "600",
+  },
+
+  sectionHeader: {
+    paddingHorizontal: 24,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  sectionBar: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: "#1e3a8a",
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#0f172a",
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 2,
+  },
+
+  seatMapCard: {
+    marginHorizontal: 20,
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: "#1e3a8a",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: "#f1f5f9",
+  },
+
+  driverArea: {
+    alignItems: "center",
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  driverIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#f8fafc",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  driverLine: {
+    width: 60,
+    height: 2,
+    backgroundColor: "#e2e8f0",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  driverLabel: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#94a3b8",
+    letterSpacing: 1,
+  },
+
+  colHeaders: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  colHeaderText: {
+    width: SEAT_SIZE * 2 + 6,
+    textAlign: "center",
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#94a3b8",
+    letterSpacing: 1,
+  },
+
+  seatRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  seatGroup: {
+    flexDirection: "row",
+  },
+
+  seat: {
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    margin: 3,
+    borderWidth: 1.5,
+    position: "relative",
+  },
+  seatLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  selectedCheck: {
+    position: "absolute",
+    top: 1,
+    right: 1,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  seatCross: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  crossLine: {
+    width: 18,
+    height: 1.5,
+    backgroundColor: "#94a3b8",
+    position: "absolute",
+  },
+  womenDot: {
+    position: "absolute",
+    top: 3,
+    right: 3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#db2777",
+  },
+
+  emptyLayout: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyLayoutText: {
+    marginTop: 12,
+    color: "#94a3b8",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+
+  legendCard: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+  },
+  legendTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  legendTitle: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#64748b",
+    letterSpacing: 1,
+  },
+  legendGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendSwatch: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  legendLabel: {
+    fontSize: 11,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+
+  summaryCard: {
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+  },
+  summaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#166534",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  summarySeats: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  selectedSeatTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#1e3a8a",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  selectedSeatText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#fff",
+  },
+
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === "ios" ? 28 : 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  bottomBarInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  fareSection: {
+    flex: 1,
+  },
+  fareLabel: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#94a3b8",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  fareValue: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#0f172a",
+  },
+  perSeatText: {
+    fontSize: 10,
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: 1,
+  },
+  continueBtn: {
+    backgroundColor: "#1e3a8a",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    elevation: 4,
+    shadowColor: "#1e3a8a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  continueBtnDisabled: {
+    backgroundColor: "#cbd5e1",
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  continueBtnText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  bottomHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 8,
+  },
+  hintText: {
+    fontSize: 10,
+    color: "#94a3b8",
+    fontWeight: "500",
+  },
+});

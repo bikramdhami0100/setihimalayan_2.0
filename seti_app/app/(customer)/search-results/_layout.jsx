@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { MaterialTopTabs } from "../../../components/MaterialTopTabs";
 import { useLocalSearchParams, router } from "expo-router";
 import { useSearchData } from "../../../context/SearchContext";
-import { View, Text, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, TouchableOpacity, SafeAreaView, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function SearchResultsLayout() {
@@ -16,15 +16,14 @@ export default function SearchResultsLayout() {
   }, [origin, destination, date]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: 'white' }}>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' }}>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 16 }}>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
         </TouchableOpacity>
         <View>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1e3a8a' }}>Search Results</Text>
-          <Text style={{ fontSize: 12, color: '#64748b' }}>{origin} → {destination}</Text>
+          <Text style={styles.title}>Search Results</Text>
+          <Text style={styles.subtitle}>{origin} → {destination}</Text>
         </View>
       </View>
 
@@ -44,3 +43,29 @@ export default function SearchResultsLayout() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  backBtn: {
+    marginRight: 16,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1e3a8a',
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+});

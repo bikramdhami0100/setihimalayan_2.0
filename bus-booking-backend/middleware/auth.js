@@ -7,7 +7,6 @@ import User from '../models/User.js';
  * Attaches user object to req.user
  */
 export const authenticate = async (req, res, next) => {
-    console.log(req.body, " from auth middleware");
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return errorResponse(res, 'No token provided. Please authenticate.', 401);

@@ -24,13 +24,15 @@ export const createRoute = async (req, res, next) => {
 // };
 export const getAllRoutes = async (req, res, next) => {
     try {
-        const { active_only, limit, page, search } = req.query;
+        const { active_only, limit, page, search, sortBy, sortOrder } = req.query;
 
         const result = await Route.findAll({
             activeOnly: active_only === 'true',
             search: search || null,
             page: page ? parseInt(page, 10) : undefined,
-            limit: limit ? parseInt(limit, 10) : undefined
+            limit: limit ? parseInt(limit, 10) : undefined,
+            sortBy: sortBy || undefined,
+            sortOrder: sortOrder || undefined
         });
 
         successResponse(res, 'Routes retrieved', { 

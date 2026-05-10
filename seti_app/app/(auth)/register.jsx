@@ -47,197 +47,197 @@ export default function Register() {
 
   return (
     <>
-      <SafeAreaView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
+      <View style={styles.container}>
+        <View style={styles.topCircle} />
+        <SafeAreaView style={{ flex: 1 }}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
           >
-            {/* Top Decorative Element */}
-            <View style={styles.topCircle} />
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.headerContainer}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                  <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
+                </TouchableOpacity>
+                <Text variant="headlineLarge" style={styles.title}>Create Account</Text>
+                <Text variant="bodyMedium" style={styles.subtitle}>Join us for a seamless travel experience</Text>
+              </View>
 
-            <View style={styles.headerContainer}>
-              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
-              </TouchableOpacity>
-              <Text variant="headlineLarge" style={styles.title}>Create Account</Text>
-              <Text variant="bodyMedium" style={styles.subtitle}>Join us for a seamless travel experience</Text>
-            </View>
+              <Animated.View entering={FadeInUp.duration(800).delay(200)}>
+                <Surface style={styles.card} elevation={1}>
 
-            <Animated.View entering={FadeInUp.duration(800).delay(200)}>
-              <Surface style={styles.card} elevation={1}>
+                  <Controller
+                    control={control}
+                    rules={{ required: "Full name is required" }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          label="Full Name"
+                          value={value}
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          mode="outlined"
+                          left={<TextInput.Icon icon="account" color="#64748b" />}
+                          style={styles.input}
+                          outlineColor="#e2e8f0"
+                          activeOutlineColor="#1e3a8a"
+                          error={!!errors.full_name}
+                        />
+                        {errors.full_name && <HelperText type="error" visible={true}>{errors.full_name.message}</HelperText>}
+                      </View>
+                    )}
+                    name="full_name"
+                  />
 
-                <Controller
-                  control={control}
-                  rules={{ required: "Full name is required" }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        label="Full Name"
-                        value={value}
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        mode="outlined"
-                        left={<TextInput.Icon icon="account" color="#64748b" />}
-                        style={styles.input}
-                        outlineColor="#e2e8f0"
-                        activeOutlineColor="#1e3a8a"
-                        error={!!errors.full_name}
-                      />
-                      {errors.full_name && <HelperText type="error" visible={true}>{errors.full_name.message}</HelperText>}
-                    </View>
-                  )}
-                  name="full_name"
-                />
+                  <Controller
+                    control={control}
+                    rules={{
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                        message: "Invalid email address"
+                      }
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          label="Email Address"
+                          value={value}
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          mode="outlined"
+                          autoCapitalize="none"
+                          keyboardType="email-address"
+                          left={<TextInput.Icon icon="email" color="#64748b" />}
+                          style={styles.input}
+                          outlineColor="#e2e8f0"
+                          activeOutlineColor="#1e3a8a"
+                          error={!!errors.email}
+                        />
+                        {errors.email && <HelperText type="error" visible={true}>{errors.email.message}</HelperText>}
+                      </View>
+                    )}
+                    name="email"
+                  />
 
-                <Controller
-                  control={control}
-                  rules={{
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: "Invalid email address"
-                    }
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        label="Email Address"
-                        value={value}
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        mode="outlined"
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        left={<TextInput.Icon icon="email" color="#64748b" />}
-                        style={styles.input}
-                        outlineColor="#e2e8f0"
-                        activeOutlineColor="#1e3a8a"
-                        error={!!errors.email}
-                      />
-                      {errors.email && <HelperText type="error" visible={true}>{errors.email.message}</HelperText>}
-                    </View>
-                  )}
-                  name="email"
-                />
+                  <Controller
+                    control={control}
+                    rules={{
+                      required: "Phone number is required",
+                      pattern: {
+                        value: /^[0-9]{10}$/,
+                        message: "Invalid phone number (10 digits)"
+                      }
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          label="Phone Number"
+                          value={value}
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          mode="outlined"
+                          keyboardType="phone-pad"
+                          left={<TextInput.Icon icon="phone" color="#64748b" />}
+                          style={styles.input}
+                          outlineColor="#e2e8f0"
+                          activeOutlineColor="#1e3a8a"
+                          error={!!errors.phone}
+                        />
+                        {errors.phone && <HelperText type="error" visible={true}>{errors.phone.message}</HelperText>}
+                      </View>
+                    )}
+                    name="phone"
+                  />
 
-                <Controller
-                  control={control}
-                  rules={{
-                    required: "Phone number is required",
-                    pattern: {
-                      value: /^[0-9]{10}$/,
-                      message: "Invalid phone number (10 digits)"
-                    }
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        label="Phone Number"
-                        value={value}
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        mode="outlined"
-                        keyboardType="phone-pad"
-                        left={<TextInput.Icon icon="phone" color="#64748b" />}
-                        style={styles.input}
-                        outlineColor="#e2e8f0"
-                        activeOutlineColor="#1e3a8a"
-                        error={!!errors.phone}
-                      />
-                      {errors.phone && <HelperText type="error" visible={true}>{errors.phone.message}</HelperText>}
-                    </View>
-                  )}
-                  name="phone"
-                />
+                  <Controller
+                    control={control}
+                    rules={{
+                      required: "Password is required",
+                      minLength: { value: 6, message: "Password must be at least 6 characters" }
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          label="Password"
+                          value={value}
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          mode="outlined"
+                          secureTextEntry={!showPassword}
+                          left={<TextInput.Icon icon="lock" color="#64748b" />}
+                          right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} color="#64748b" />}
+                          style={styles.input}
+                          outlineColor="#e2e8f0"
+                          activeOutlineColor="#1e3a8a"
+                          error={!!errors.password}
+                        />
+                        {errors.password && <HelperText type="error" visible={true}>{errors.password.message}</HelperText>}
+                      </View>
+                    )}
+                    name="password"
+                  />
 
-                <Controller
-                  control={control}
-                  rules={{
-                    required: "Password is required",
-                    minLength: { value: 6, message: "Password must be at least 6 characters" }
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        label="Password"
-                        value={value}
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        mode="outlined"
-                        secureTextEntry={!showPassword}
-                        left={<TextInput.Icon icon="lock" color="#64748b" />}
-                        right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} color="#64748b" />}
-                        style={styles.input}
-                        outlineColor="#e2e8f0"
-                        activeOutlineColor="#1e3a8a"
-                        error={!!errors.password}
-                      />
-                      {errors.password && <HelperText type="error" visible={true}>{errors.password.message}</HelperText>}
-                    </View>
-                  )}
-                  name="password"
-                />
+                  <Controller
+                    control={control}
+                    rules={{
+                      validate: value => value === password || "Passwords do not match"
+                    }}
+                    render={({ field: { onChange, onBlur, value } }) => (
+                      <View style={styles.inputContainer}>
+                        <TextInput
+                          label="Confirm Password"
+                          value={value}
+                          onBlur={onBlur}
+                          onChangeText={onChange}
+                          mode="outlined"
+                          secureTextEntry={!showPassword}
+                          left={<TextInput.Icon icon="shield-check" color="#64748b" />}
+                          style={styles.input}
+                          outlineColor="#e2e8f0"
+                          activeOutlineColor="#1e3a8a"
+                          error={!!errors.confirmPassword}
+                        />
+                        {errors.confirmPassword && <HelperText type="error" visible={true}>{errors.confirmPassword.message}</HelperText>}
+                      </View>
+                    )}
+                    name="confirmPassword"
+                  />
 
-                <Controller
-                  control={control}
-                  rules={{
-                    validate: value => value === password || "Passwords do not match"
-                  }}
-                  render={({ field: { onChange, onBlur, value } }) => (
-                    <View style={styles.inputContainer}>
-                      <TextInput
-                        label="Confirm Password"
-                        value={value}
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        mode="outlined"
-                        secureTextEntry={!showPassword}
-                        left={<TextInput.Icon icon="shield-check" color="#64748b" />}
-                        style={styles.input}
-                        outlineColor="#e2e8f0"
-                        activeOutlineColor="#1e3a8a"
-                        error={!!errors.confirmPassword}
-                      />
-                      {errors.confirmPassword && <HelperText type="error" visible={true}>{errors.confirmPassword.message}</HelperText>}
-                    </View>
-                  )}
-                  name="confirmPassword"
-                />
+                  <Button
+                    mode="contained"
+                    onPress={handleSubmit(onSubmit)}
+                    style={styles.registerButton}
+                    labelStyle={styles.buttonLabel}
+                    contentStyle={styles.buttonContent}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? <ActivityIndicator color="white" /> : "Sign Up"}
+                  </Button>
 
-                <Button
-                  mode="contained"
-                  onPress={handleSubmit(onSubmit)}
-                  style={styles.registerButton}
-                  labelStyle={styles.buttonLabel}
-                  contentStyle={styles.buttonContent}
-                  disabled={isLoading}
-                >
-                  {isLoading ? <ActivityIndicator color="white" /> : "Sign Up"}
-                </Button>
+                  <Text variant="bodySmall" style={styles.termsText}>
+                    By joining, you agree to our <Text style={styles.linkText}>Terms of Service</Text> and <Text style={styles.linkText}>Privacy Policy</Text>
+                  </Text>
+                </Surface>
+              </Animated.View>
 
-                <Text variant="bodySmall" style={styles.termsText}>
-                  By joining, you agree to our <Text style={styles.linkText}>Terms of Service</Text> and <Text style={styles.linkText}>Privacy Policy</Text>
+              <View style={styles.footer}>
+                <Text variant="bodyMedium" style={styles.footerText}>
+                  Already have an account?
                 </Text>
-              </Surface>
-            </Animated.View>
+                <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+                  <Text variant="bodyMedium" style={styles.signUpText}> Login</Text>
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.footer}>
-              <Text variant="bodyMedium" style={styles.footerText}>
-                Already have an account?
-              </Text>
-              <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-                <Text variant="bodyMedium" style={styles.signUpText}> Login</Text>
-              </TouchableOpacity>
-            </View>
-
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </View>
       <Snackbar
         visible={snackbarVisible}
         onDismiss={() => {
@@ -247,8 +247,10 @@ export default function Register() {
         action={{
           label: 'OK',
           onPress: () => setSnackbarVisible(false),
+          textColor: '#fff',
         }}
-        style={{ backgroundColor: '#1e293b' }}
+        style={{ backgroundColor: '#d32f2f' }}
+        theme={{ colors: { inverseOnSurface: '#ffffff' } }}
       >
         {error}
       </Snackbar>

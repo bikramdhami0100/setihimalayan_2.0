@@ -29,7 +29,7 @@ class Route {
         return rows[0];
     }
 
-  static async findAll({ activeOnly = false, search = null, page, limit } = {}) {
+  static async findAll({ activeOnly = false, search = null, page, limit, sortBy, sortOrder } = {}) {
     let query = 'SELECT * FROM routes WHERE deleted_at IS NULL';
     let countQuery = 'SELECT COUNT(*) as total FROM routes WHERE deleted_at IS NULL';
 
@@ -56,7 +56,10 @@ class Route {
         countValues.push(term, term);
     }
 
-    query += ' ORDER BY origin, destination';
+    const allowedSortFields = ['origin', 'destination', 'distance_km', 'duration_minutes', 'base_price', 'is_active', 'popularity_score', 'created_at'];
+    const safeSortBy = sortBy && allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const safeSortOrder = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    query += ` ORDER BY ${safeSortBy} ${safeSortOrder}`;
 
     if (page !== undefined && limit !== undefined) {
         const offset = (page - 1) * limit;

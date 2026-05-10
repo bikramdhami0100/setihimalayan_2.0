@@ -1,4 +1,5 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import { setSnackbarHandler } from '../api/client';
 
 export const UIContext = createContext();
 
@@ -11,6 +12,10 @@ export const UIProvider = ({ children }) => {
   const [themeMode, setThemeMode] = useState('light');
   const [selectedScheduleId, setSelectedScheduleId] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
+
+  useEffect(() => {
+    setSnackbarHandler(showSnackbar);
+  }, []);
 
   const setLoading = (loading) => setIsLoading(loading);
   const setOffline = (offline) => setIsOffline(offline);

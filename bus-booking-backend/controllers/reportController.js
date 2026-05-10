@@ -19,7 +19,27 @@ export const getDailyRevenue = async (req, res, next) => {
 
 export const getPopularRoutes = async (req, res, next) => {
     try {
-        const [rows] = await pool.execute(`SELECT * FROM popular_routes LIMIT 10`);
+        const [rows] = await pool.execute(`
+            SELECT
+                r.id as route_id,
+                r.origin,
+                r.destination,
+                r.route_image,
+                r.popularity_score,
+                r.duration_minutes,
+                r.base_price,
+                r.distance_km,
+                COUNT(b.id) as booking_count,
+                COALESCE(SUM(b.total_amount), 0) as total_revenue,
+                COALESCE(AVG(b.total_amount), 0) as average_revenue
+            FROM routes r
+            LEFT JOIN schedules s ON s.route_id = r.id
+            LEFT JOIN bookings b ON b.schedule_id = s.id AND b.status = 'confirmed'
+            WHERE r.deleted_at IS NULL
+            GROUP BY r.id, r.origin, r.destination, r.route_image, r.popularity_score, r.duration_minutes, r.base_price, r.distance_km
+            ORDER BY booking_count DESC
+            LIMIT 10
+        `);
         successResponse(res, 'Popular routes', { routes: rows });
     } catch (err) {
         next(err);

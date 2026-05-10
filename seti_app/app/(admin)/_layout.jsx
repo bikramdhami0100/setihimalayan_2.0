@@ -1,42 +1,57 @@
 import { Drawer } from "expo-router/drawer";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { View, Text, TouchableOpacity, ActivityIndicator, Image } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Image, StyleSheet } from "react-native";
 import { router, Redirect, useRootNavigationState } from "expo-router";
 import { useContext, useEffect } from "react";
 import { AuthContext } from "../../context/AuthContext";
+import { API_URL } from "../../utils/constants";
 import { DrawerContentScrollView, DrawerItemList, DrawerItem } from "@react-navigation/drawer";
 
 function CustomDrawerContent(props) {
   const { user, logout } = useContext(AuthContext);
 
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith("http")) return url;
+    const baseUrl = API_URL.replace("/api", "");
+    return `${baseUrl}${url}`;
+  };
+
+  const displayName = user?.full_name || "Admin";
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
-    <View className="flex-1">
+    <View style={styles.container}>
       <DrawerContentScrollView {...props} contentContainerStyle={{ paddingTop: 0 }}>
         {/* User Profile Header */}
-        <View className="bg-[#1e3a8a] pt-16 pb-8 px-6 mb-4 rounded-br-[40px]">
-          <View className="w-20 h-20 bg-white/20 rounded-3xl items-center justify-center mb-4 border border-white/30">
-            <Ionicons name="person" size={40} color="white" />
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
+            {user?.profile_image ? (
+              <Image source={{ uri: getImageUrl(user.profile_image) }} style={styles.profileImageFull} />
+            ) : (
+              <Text style={styles.avatarInitial}>{initial}</Text>
+            )}
           </View>
-          <Text className="text-white text-xl font-black">{user?.full_name || "Admin"}</Text>
-          <View className="flex-row items-center mt-1">
-            <View className="w-2 h-2 rounded-full bg-green-400 mr-2" />
-            <Text className="text-blue-100 text-xs font-bold tracking-widest uppercase">
+          <Text style={styles.userName}>{user?.full_name || "Admin"}</Text>
+          <View style={styles.roleRow}>
+            <View style={styles.statusDot} />
+            <Text style={styles.roleText}>
               {user?.role?.replace('_', ' ') || "Administrator"}
             </Text>
           </View>
         </View>
 
         {/* Drawer Items */}
-        <View className="px-2">
+        <View style={styles.drawerItemsContainer}>
           <DrawerItemList {...props} />
         </View>
 
         {/* Divider */}
-        <View className="h-[1px] bg-gray-100 mx-6 my-4" />
+        <View style={styles.divider} />
 
         {/* Support/Settings Section */}
-        <View className="px-4">
-          <Text className="text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-2 ml-4">Account</Text>
+        <View style={styles.accountSection}>
+          <Text style={styles.accountLabel}>Account</Text>
           <DrawerItem
             label="Logout"
             onPress={() => logout()}
@@ -47,8 +62,8 @@ function CustomDrawerContent(props) {
       </DrawerContentScrollView>
 
       {/* Footer */}
-      <View className="p-6 border-t border-gray-50">
-        <Text className="text-gray-400 text-[10px] text-center font-medium">Seti Himalayan v2.0</Text>
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Seti Himalayan v2.0</Text>
       </View>
     </View>
   );
@@ -62,7 +77,7 @@ export default function AdminLayout() {
 
   if (isLoading || !isNavigationReady) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1e3a8a" />
       </View>
     );
@@ -117,7 +132,6 @@ export default function AdminLayout() {
       <Drawer.Screen
         name="buses"
       
-        // className="bg-red-500"
         options={{
           drawerLabel: "Manage Buses",
           title: "Buses",
@@ -177,3 +191,100 @@ export default function AdminLayout() {
     </Drawer>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  profileHeader: {
+    backgroundColor: '#1E3A8A',
+    paddingTop: 64,
+    paddingBottom: 32,
+    paddingHorizontal: 24,
+    marginBottom: 16,
+    borderBottomRightRadius: 40,
+  },
+  avatarContainer: {
+    width: 80,
+    height: 80,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    overflow: 'hidden',
+  },
+  profileImageFull: {
+    width: 80,
+    height: 80,
+  },
+  avatarInitial: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  userName: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  roleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4ADE80',
+    marginRight: 8,
+  },
+  roleText: {
+    color: '#DBEAFE',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  drawerItemsContainer: {
+    paddingHorizontal: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginHorizontal: 24,
+    marginVertical: 16,
+  },
+  accountSection: {
+    paddingHorizontal: 16,
+  },
+  accountLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8,
+    marginLeft: 16,
+  },
+  footer: {
+    padding: 24,
+    borderTopWidth: 1,
+    borderColor: '#F8FAFC',
+  },
+  footerText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+});

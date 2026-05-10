@@ -1,33 +1,41 @@
 import React from 'react';
-import Pdf from 'react-native-pdf';
+import { StyleSheet, View, Text } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 export default function PdfViewer({ source, style }) {
-    return (
-        <Pdf
-            source={source}
-            onLoadComplete={(numberOfPages, filePath) => {
-                console.log(`Number of pages: ${numberOfPages}`);
-            }}
-            onPageChanged={(page, numberOfPages) => {
-                console.log(`Current page: ${page}`);
-            }}
-            onError={(error) => {
-                console.log(error);
-            }}
-            onPressLink={(uri) => {
-                console.log(`Link pressed: ${uri}`);
-            }}
-            style={style}
-        />
-    );
-}
-// use this component instead of WebView to display PDF files in React Native. The Pdf component from react-native-pdf provides better performance and more features for handling PDF files compared to using a WebView.
+  const pdfUri = source?.uri || '';
+  const googleDocsUrl = `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(pdfUri)}`;
 
-//   <WebView
-//             source={{ uri: source.uri }}
-//             style={style}
-//             javaScriptEnabled={true}
-//             domStorageEnabled={true}
-//             startInLoadingState={true}
-//             scalesPageToFit={true}
-//         />
+  return (
+    <WebView
+      source={{ uri: googleDocsUrl }}
+      style={[styles.webview, style]}
+      startInLoadingState
+      renderLoading={() => (
+        <View style={styles.loading}>
+          <Text style={styles.loadingText}>Loading PDF...</Text>
+        </View>
+      )}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  webview: {
+    flex: 1,
+  },
+  loading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    color: '#64748b',
+    fontSize: 14,
+  },
+});

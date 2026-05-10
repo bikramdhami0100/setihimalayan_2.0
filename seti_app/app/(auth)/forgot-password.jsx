@@ -35,77 +35,77 @@ export default function ForgotPassword() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+    <View style={styles.container}>
+      <View style={styles.topCircle} />
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
         >
-          {/* Top Decorative Element */}
-          <View style={styles.topCircle} />
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.headerContainer}>
+              <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
+              </TouchableOpacity>
+              <Text variant="headlineLarge" style={styles.title}>Reset Password</Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>Recover your travel account securely</Text>
+            </View>
 
-          <View style={styles.headerContainer}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-              <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
-            </TouchableOpacity>
-            <Text variant="headlineLarge" style={styles.title}>Reset Password</Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>Recover your travel account securely</Text>
-          </View>
+            <Animated.View entering={FadeInUp.duration(800).delay(200)}>
+              <Surface style={styles.card} elevation={1}>
 
-          <Animated.View entering={FadeInUp.duration(800).delay(200)}>
-            <Surface style={styles.card} elevation={1}>
-
-              <View style={styles.iconContainer}>
-                <View style={styles.iconCircle}>
-                  <MaterialCommunityIcons name="lock-reset" size={40} color="#1e3a8a" />
+                <View style={styles.iconContainer}>
+                  <View style={styles.iconCircle}>
+                    <MaterialCommunityIcons name="lock-reset" size={40} color="#1e3a8a" />
+                  </View>
+                  <Text variant="bodyMedium" style={styles.instructionText}>
+                    Enter your email address and we'll send you instructions to reset your password.
+                  </Text>
                 </View>
-                <Text variant="bodyMedium" style={styles.instructionText}>
-                  Enter your email address and we'll send you instructions to reset your password.
-                </Text>
-              </View>
 
-              <TextInput
-                label="Email Address"
-                value={email}
-                onChangeText={setEmail}
-                mode="outlined"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                left={<TextInput.Icon icon="email" color="#64748b" />}
-                style={styles.input}
-                outlineColor="#e2e8f0"
-                activeOutlineColor="#1e3a8a"
-              />
+                <TextInput
+                  label="Email Address"
+                  value={email}
+                  onChangeText={setEmail}
+                  mode="outlined"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  left={<TextInput.Icon icon="email" color="#64748b" />}
+                  style={styles.input}
+                  outlineColor="#e2e8f0"
+                  activeOutlineColor="#1e3a8a"
+                />
 
-              <Button
-                mode="contained"
-                onPress={handleReset}
-                style={styles.resetButton}
-                labelStyle={styles.buttonLabel}
-                contentStyle={styles.buttonContent}
-                disabled={loading}
-              >
-                {loading ? <ActivityIndicator color="white" /> : "Send Reset Link"}
-              </Button>
-            </Surface>
-          </Animated.View>
+                <Button
+                  mode="contained"
+                  onPress={handleReset}
+                  style={styles.resetButton}
+                  labelStyle={styles.buttonLabel}
+                  contentStyle={styles.buttonContent}
+                  disabled={loading}
+                >
+                  {loading ? <ActivityIndicator color="white" /> : "Send Reset Link"}
+                </Button>
+              </Surface>
+            </Animated.View>
 
-          <View style={styles.footer}>
-            <Text variant="bodyMedium" style={styles.footerText}>
-              Remember your password?
-            </Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
-              <Text variant="bodyMedium" style={styles.loginText}> Login</Text>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.footer}>
+              <Text variant="bodyMedium" style={styles.footerText}>
+                Remember your password?
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+                <Text variant="bodyMedium" style={styles.loginText}> Login</Text>
+              </TouchableOpacity>
+            </View>
 
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 

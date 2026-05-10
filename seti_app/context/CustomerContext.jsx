@@ -4,7 +4,7 @@ import * as routeApi from '../api/routes';
 import * as scheduleApi from '../api/schedules';
 import * as bookingApi from '../api/bookings';
 import { getProfile } from '../api/auth';
-import { getAccessToken } from '../utils/storage';
+import { AuthContext } from './AuthContext';
 
 const CustomerContext = createContext();
 
@@ -141,8 +141,7 @@ const fetchPopularRoutes = useCallback(async () => {
       try {
         const { page, limit } = getPagination(key);
         const search = getSearchQuery(key);
-        const token = await getAccessToken();
-        const res = await bookingApi.getUserBookings(token, { page: page + 1, limit, search });
+        const res = await bookingApi.getUserBookings(page + 1, limit, search);
         setMyBookings(res.data.data.bookings || []);
         updatePagination(key, { total: res.data.data.pagination?.total || 0 });
       } finally {
@@ -157,8 +156,7 @@ const fetchPopularRoutes = useCallback(async () => {
     const key = 'profile';
     setKeyLoading(key, true);
     try {
-      const token = await getAccessToken();
-      const res = await getProfile(token);
+      const res = await getProfile();
       setUserProfile(res.data.data.user);
     } finally {
       setKeyLoading(key, false);
@@ -170,8 +168,7 @@ const fetchPopularRoutes = useCallback(async () => {
     const key = 'createBooking';
     setKeyLoading(key, true);
     try {
-      const token = await getAccessToken();
-      const res = await bookingApi.createBooking(token, bookingData);
+      const res = await bookingApi.createBooking(bookingData);
       await fetchMyBookings(); // refresh list
       return res.data;
     } finally {
@@ -183,8 +180,7 @@ const fetchPopularRoutes = useCallback(async () => {
     const key = 'cancelBooking';
     setKeyLoading(key, true);
     try {
-      const token = await getAccessToken();
-      const res = await bookingApi.cancelBooking(token, bookingId);
+      const res = await bookingApi.cancelBooking(bookingId);
       await fetchMyBookings(); // refresh list
       return res.data;
     } finally {
@@ -192,16 +188,17 @@ const fetchPopularRoutes = useCallback(async () => {
     }
   }, [fetchMyBookings]);
 
-  // ── Initial Data Fetch ─────────────────────────────────────────────────
+  const { isAuthenticated } = useContext(AuthContext);
+
   useEffect(() => {
+    if (!isAuthenticated) return;
     fetchBuses();
     fetchRoutes();
     fetchSchedules();
     fetchMyBookings();
     fetchProfile();
     fetchPopularRoutes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isAuthenticated]);
 
   // ── Context Value ──────────────────────────────────────────────────────
   const value = {

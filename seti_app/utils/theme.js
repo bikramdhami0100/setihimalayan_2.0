@@ -15,6 +15,8 @@ export const theme = {
     disabled: colors.disabled,
     placeholder: colors.placeholder,
     backdrop: colors.overlay,
+    inverseOnSurface: '#FFFFFF',
+    outline: colors.border,
   },
   roundness: 8,
 };

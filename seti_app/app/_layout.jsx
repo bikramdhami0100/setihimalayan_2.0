@@ -1,37 +1,30 @@
 import 'react-native-gesture-handler';
-import { Buffer } from 'buffer';
-global.Buffer = global.Buffer || Buffer;
-import { Slot, Stack } from "expo-router";
+import { Buffer as BufferPolyfill } from 'buffer';
+import { Stack } from "expo-router";
 import { AuthProvider } from "../context/AuthContext";
 import { BookingProvider } from "../context/BookingContext";
 import { UIProvider } from "../context/UIContext";
 import { AdminProvider } from "../context/AdminContext";
-import "../global.css";
-// import * as Notifications from 'expo-notifications';
-
-// Notifications.setNotificationHandler({
-//   handleNotification: async () => ({
-//     shouldShowAlert: true,
-//     shouldPlaySound: true,
-//     shouldSetBadge: false,
-//   }),
-// });
 
 import { PaperProvider } from 'react-native-paper';
+import { LogBox } from 'react-native';
+import { theme } from '../utils/theme';
 import { CustomerProvider } from '../context/CustomerContext';
 
+// Suppress LogBox warnings for unhandled 401 promise rejections
+LogBox.ignoreLogs(['Request failed with status code 401']);
+
+if (typeof global.Buffer === 'undefined') {
+  global.Buffer = BufferPolyfill;
+}
+
 export default function RootLayout() {
-  let isUserLogin="passenger";
-  // get token from async storage or native storage, this is just a placeholder
   return (
-    <PaperProvider>
+    <PaperProvider theme={theme}>
       <UIProvider>
         <AuthProvider>
-
-         
           <AdminProvider>
           <CustomerProvider>
-
             <BookingProvider>
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { TextInput } from "react-native-paper";
@@ -66,43 +66,41 @@ export default function ChangePassword() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-[#f8fafc]">
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.flex}
       >
         <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+          style={styles.flex}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Decorative Top Background */}
-          <View className="absolute top-[-200] right-[-100] w-[500] h-[500] rounded-full bg-blue-50 opacity-50" />
+          <View style={styles.decorCircle} />
 
-          <View className="px-6 pt-10 pb-6">
+          <View style={styles.headerSection}>
             <TouchableOpacity
               onPress={() => router.push("/login")}
-              className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm border border-gray-100 mb-8"
+              style={styles.backBtn}
             >
               <Ionicons name="arrow-back" size={24} color="#1e3a8a" />
             </TouchableOpacity>
 
-            <Text className="text-[#1e3a8a] text-3xl font-black mb-2">
+            <Text style={styles.title}>
               {isTokenReset ? "Reset Password" : "Update Security"}
             </Text>
-            <Text className="text-gray-500 text-base font-medium leading-5">
+            <Text style={styles.subtitle}>
               {isTokenReset
                 ? "Enter your new password below to regain access to your account."
                 : "Choose a strong password to ensure your travel account remains secure."}
             </Text>
           </View>
 
-          <Animated.View entering={FadeInUp.duration(800).delay(200)} className="px-6">
-            <View className="bg-white rounded-[40px] p-8 shadow-sm border border-gray-100">
-
-              <View className="items-center mb-8">
-                <View className="w-20 h-20 bg-slate-50 rounded-3xl items-center justify-center">
+          <Animated.View entering={FadeInUp.duration(800).delay(200)} style={styles.formWrapper}>
+            <View style={styles.formCard}>
+              <View style={styles.iconSection}>
+                <View style={styles.iconCircle}>
                   <MaterialCommunityIcons
                     name={isTokenReset ? "lock-reset" : "shield-lock-outline"}
                     size={42}
@@ -111,7 +109,6 @@ export default function ChangePassword() {
                 </View>
               </View>
 
-              {/* Current Password - Only show if NOT a token reset */}
               {!isTokenReset && (
                 <TextInput
                   label="Email"
@@ -119,7 +116,7 @@ export default function ChangePassword() {
                   onChangeText={setEmail}
                   mode="outlined"
                   left={<TextInput.Icon icon="email-outline" color="#64748b" />}
-                  style={{ backgroundColor: 'white', marginBottom: 20 }}
+                  style={styles.textInputStyle}
                   outlineColor="#e2e8f0"
                   activeOutlineColor="#1e3a8a"
                   outlineStyle={{ borderRadius: 16 }}
@@ -134,7 +131,7 @@ export default function ChangePassword() {
                 secureTextEntry={!showNew}
                 left={<TextInput.Icon icon="lock-plus-outline" color="#64748b" />}
                 right={<TextInput.Icon icon={showNew ? "eye-off" : "eye"} onPress={() => setShowNew(!showNew)} color="#64748b" />}
-                style={{ backgroundColor: 'white', marginBottom: 20 }}
+                style={styles.textInputStyle}
                 outlineColor="#e2e8f0"
                 activeOutlineColor="#1e3a8a"
                 outlineStyle={{ borderRadius: 16 }}
@@ -147,7 +144,7 @@ export default function ChangePassword() {
                 mode="outlined"
                 secureTextEntry={!showNew}
                 left={<TextInput.Icon icon="shield-check-outline" color="#64748b" />}
-                style={{ backgroundColor: 'white', marginBottom: 30 }}
+                style={[styles.textInputStyle, styles.lastInput]}
                 outlineColor="#e2e8f0"
                 activeOutlineColor="#1e3a8a"
                 outlineStyle={{ borderRadius: 16 }}
@@ -156,12 +153,12 @@ export default function ChangePassword() {
               <TouchableOpacity
                 onPress={handleUpdate}
                 disabled={loading}
-                className={`bg-[#1e3a8a] rounded-2xl py-5 items-center shadow-lg shadow-blue-200 ${loading ? 'opacity-70' : ''}`}
+                style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
               >
                 {loading ? (
                   <ActivityIndicator color="white" />
                 ) : (
-                  <Text className="text-white text-lg font-black tracking-tight">
+                  <Text style={styles.submitBtnText}>
                     {isTokenReset ? "Set New Password" : "Change Password"}
                   </Text>
                 )}
@@ -169,15 +166,138 @@ export default function ChangePassword() {
             </View>
           </Animated.View>
 
-          <View className="flex-row justify-center mt-auto py-10">
-            <Text className="text-gray-500 font-medium">Locked out? </Text>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Locked out? </Text>
             <TouchableOpacity onPress={() => router.push("/(customer)/profile")}>
-              <Text className="text-[#0ea5e9] font-black">Support Center</Text>
+              <Text style={styles.footerLink}>Support Center</Text>
             </TouchableOpacity>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  decorCircle: {
+    position: 'absolute',
+    top: -200,
+    right: -100,
+    width: 500,
+    height: 500,
+    borderRadius: 250,
+    backgroundColor: '#EFF6FF',
+    opacity: 0.5,
+  },
+  headerSection: {
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 24,
+  },
+  backBtn: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    marginBottom: 32,
+  },
+  title: {
+    color: '#1e3a8a',
+    fontSize: 24,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  formWrapper: {
+    paddingHorizontal: 24,
+  },
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 40,
+    padding: 32,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  iconSection: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  iconCircle: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textInputStyle: {
+    backgroundColor: 'white',
+    marginBottom: 20,
+  },
+  lastInput: {
+    marginBottom: 30,
+  },
+  submitBtn: {
+    backgroundColor: '#1e3a8a',
+    borderRadius: 16,
+    paddingVertical: 20,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  submitBtnDisabled: {
+    opacity: 0.7,
+  },
+  submitBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 'auto',
+    paddingVertical: 40,
+  },
+  footerText: {
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  footerLink: {
+    color: '#0ea5e9',
+    fontWeight: '900',
+  },
+});

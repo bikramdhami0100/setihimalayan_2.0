@@ -115,7 +115,8 @@ static async cancelBooking(id, reason, refundAmount = null) {
     static async getUserBookings(userId, limit = 10, offset = 0) {
         const [rows] = await pool.execute(
             `SELECT b.id, b.booking_reference, b.total_amount, b.status, b.created_at,
-                    b.confirmed_at, s.departure_time, r.origin, r.destination
+                    b.confirmed_at, b.selected_seats, b.passenger_details,
+                    s.departure_time, s.arrival_time, r.origin, r.destination
              FROM bookings b
              JOIN schedules s ON s.id = b.schedule_id
              JOIN routes r ON r.id = s.route_id
@@ -124,7 +125,11 @@ static async cancelBooking(id, reason, refundAmount = null) {
              LIMIT ? OFFSET ?`,
             [userId, limit, offset]
         );
-        return rows;
+        return rows.map(row => ({
+            ...row,
+            selected_seats: row.selected_seats ? JSON.parse(row.selected_seats) : [],
+            passenger_details: row.passenger_details ? JSON.parse(row.passenger_details) : []
+        }));
     }
 
 

@@ -32,11 +32,19 @@ class User {
     static async findById(id) {
         const [rows] = await pool.execute(
             `SELECT id, email, phone, full_name, role, status, is_email_verified, 
-                    profile_image, date_of_birth, address, city, state, country, postal_code, 
+                    profile_image, date_of_birth, address, city, state, country, postal_code,
+                    notification_preferences, language, refresh_token_hash,
                     created_at, last_login_at 
              FROM users WHERE id = ? AND deleted_at IS NULL`,
             [id]
         );
+        if (rows[0]?.notification_preferences && typeof rows[0].notification_preferences === 'string') {
+            try {
+                rows[0].notification_preferences = JSON.parse(rows[0].notification_preferences);
+            } catch (e) {
+                rows[0].notification_preferences = {};
+            }
+        }
         return rows[0];
     }
 

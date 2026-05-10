@@ -6,7 +6,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 
 export default function TicketPdf() {
     const { url } = useLocalSearchParams();
-    // Default mock PDF for demonstration if no URL provided
     const source = { uri: url || 'http://samples.leanpub.com/thereactnativebook-sample.pdf', cache: true };
 
     return (
@@ -20,7 +19,7 @@ export default function TicketPdf() {
                     <Ionicons name="download-outline" size={24} color="#0f172a" />
                 </TouchableOpacity>
             </View>
-            
+
             <View style={styles.pdfContainer}>
                 <PdfViewer source={source} style={styles.pdf} />
             </View>

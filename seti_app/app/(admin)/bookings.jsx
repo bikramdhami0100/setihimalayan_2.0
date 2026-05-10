@@ -1,16 +1,8 @@
-
-/**
- * AdminBookings.jsx – Booking Manager (NativeWind / Tailwind CSS)
- *
- * Install once:
- *   npx expo install nativewind tailwindcss expo-print expo-sharing expo-file-system
- */
-
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View, Text, SafeAreaView, ScrollView, TouchableOpacity,
   ActivityIndicator, Alert, FlatList, RefreshControl,
-  KeyboardAvoidingView, Platform, StatusBar,
+  KeyboardAvoidingView, Platform, StatusBar, StyleSheet,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Portal, Modal, TextInput, Searchbar, Menu } from "react-native-paper";
@@ -21,25 +13,23 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { createBooking, deleteBooking, updateBooking } from "../../api/bookings";
 import { useAdminData } from "../../context/AdminContext";
 
-// ─── Static config ────────────────────────────────────────────────────────────
 const BOOKING_STATUSES = ["pending_payment", "confirmed", "cancelled", "expired", "refunded"];
 
 const STATUS_CFG = {
-  confirmed:      { dot: "bg-green-500",  badge: "bg-green-100",  text: "text-green-700",  label: "CONFIRMED"      },
-  pending_payment:{ dot: "bg-yellow-500", badge: "bg-yellow-100", text: "text-yellow-700", label: "PENDING"        },
-  cancelled:      { dot: "bg-red-500",    badge: "bg-red-100",    text: "text-red-700",    label: "CANCELLED"      },
-  expired:        { dot: "bg-gray-500",   badge: "bg-gray-100",   text: "text-gray-700",   label: "EXPIRED"        },
-  refunded:       { dot: "bg-purple-500", badge: "bg-purple-100", text: "text-purple-700", label: "REFUNDED"       },
+  confirmed:      { dot: { backgroundColor: '#22C55E' }, badge: { backgroundColor: '#DCFCE7' }, text: { color: '#15803D' }, label: "CONFIRMED"      },
+  pending_payment:{ dot: { backgroundColor: '#EAB308' }, badge: { backgroundColor: '#FEF9C3' }, text: { color: '#A16207' }, label: "PENDING"        },
+  cancelled:      { dot: { backgroundColor: '#EF4444' }, badge: { backgroundColor: '#FEE2E2' }, text: { color: '#B91C1C' }, label: "CANCELLED"      },
+  expired:        { dot: { backgroundColor: '#64748B' }, badge: { backgroundColor: '#F1F5F9' }, text: { color: '#334155' }, label: "EXPIRED"        },
+  refunded:       { dot: { backgroundColor: '#A855F7' }, badge: { backgroundColor: '#F3E8FF' }, text: { color: '#7E22CE' }, label: "REFUNDED"       },
 };
 
 const EMPTY_FORM = {
-  user_id: "",           // will store user id
-  schedule_id: "",       // will store schedule id
+  user_id: "",
+  schedule_id: "",
   seats: "1",
   status: "pending_payment",
 };
 
-// ─── Pure helpers ─────────────────────────────────────────────────────────────
 const formatDateTime = (dateStr) => {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
@@ -47,7 +37,6 @@ const formatDateTime = (dateStr) => {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-// ─── Form mapping ────────────────────────────────────────────────────────────
 const itemToForm = (item) => ({
   user_id:      item.user_id   ? String(item.user_id) : "",
   schedule_id:  item.schedule_id ? String(item.schedule_id) : "",
@@ -62,11 +51,6 @@ const toPayload = (form) => ({
   status:      form.status,
 });
 
-// ─── Export builders (HTML, CSV, PDF) – same as before, no changes needed ───
-// ... (copy your existing buildHTML, buildCSV, shareFile, exportCSV, exportPDF from earlier version) ...
-// For brevity I'm not repeating them here, but they should remain identical.
-// Make sure to include the three export functions and all helpers exactly as in the previous booking code.
-// ─── Export builders (HTML, CSV, PDF) ────────────────────────────────────────
 const buildHTML = (bookings) => `<!DOCTYPE html><html><head><meta charset="utf-8"/>
 <style>
   body{font-family:Arial,sans-serif;padding:28px;color:#1e293b}
@@ -129,7 +113,6 @@ const shareFile = async (path, mimeType, dialogTitle) => {
 const exportCSV = async (bookings) => {
   const csv = buildCSV(bookings);
   if (Platform.OS === "web") {
-    // ... same web export logic ...
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -168,9 +151,8 @@ const exportPDF = async (bookings) => {
   await shareFile(uri, "application/pdf", "Export PDF");
 };
 
-// ─── Reusable atoms ───────────────────────────────────────────────────────────
 const SectionLabel = ({ children }) => (
-  <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">{children}</Text>
+  <Text style={styles.sectionLabel}>{children}</Text>
 );
 
 const Field = ({ style, ...props }) => (
@@ -195,9 +177,9 @@ const Dropdown = ({ label, value, options, onSelect, displayKey = "label", value
       anchor={
         <TouchableOpacity
           onPress={() => setVisible(true)}
-          className="bg-white border border-slate-200 rounded-xl px-4 py-3 mb-3"
+          style={styles.dropdownAnchor}
         >
-          <Text className="text-sm font-bold text-slate-500">
+          <Text style={styles.dropdownAnchorText}>
             {selected ? selected[displayKey] : `Select ${label}`}
           </Text>
         </TouchableOpacity>
@@ -215,24 +197,24 @@ const Dropdown = ({ label, value, options, onSelect, displayKey = "label", value
 
 const PillRow = ({ options, value, onChange }) => {
   const activeBgMap = {
-    pending_payment: "bg-yellow-500 border-yellow-500",
-    confirmed:       "bg-green-600 border-green-600",
-    cancelled:       "bg-red-600 border-red-600",
-    expired:         "bg-gray-500 border-gray-500",
-    refunded:        "bg-purple-600 border-purple-600",
+    pending_payment: { backgroundColor: '#EAB308', borderColor: '#EAB308' },
+    confirmed:       { backgroundColor: '#16A34A', borderColor: '#16A34A' },
+    cancelled:       { backgroundColor: '#DC2626', borderColor: '#DC2626' },
+    expired:         { backgroundColor: '#64748B', borderColor: '#64748B' },
+    refunded:        { backgroundColor: '#9333EA', borderColor: '#9333EA' },
   };
   return (
-    <View className="flex-row flex-wrap gap-2 mb-2">
+    <View style={styles.pillRowContainer}>
       {options.map((opt) => {
         const on = value === opt;
-        const activeBg = activeBgMap[opt] || "bg-blue-900 border-blue-900";
+        const activeBg = activeBgMap[opt] || { backgroundColor: '#1E3A8A', borderColor: '#1E3A8A' };
         return (
           <TouchableOpacity
             key={opt}
             onPress={() => onChange(opt)}
-            className={`px-4 py-2 rounded-full border ${on ? activeBg : "bg-slate-100 border-slate-200"}`}
+            style={[styles.pill, on ? activeBg : styles.pillInactive]}
           >
-            <Text className={`text-xs font-extrabold ${on ? "text-white" : "text-slate-500"}`}>{opt}</Text>
+            <Text style={[styles.pillText, on ? styles.pillTextActive : styles.pillTextInactive]}>{opt}</Text>
           </TouchableOpacity>
         );
       })}
@@ -243,30 +225,28 @@ const PillRow = ({ options, value, onChange }) => {
 const StatusBadge = ({ status }) => {
   const s = STATUS_CFG[status] ?? STATUS_CFG.pending_payment;
   return (
-    <View className={`flex-row items-center gap-1 px-2 py-1 rounded-lg ${s.badge}`}>
-      <View className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-      <Text className={`text-[9px] font-black ${s.text}`}>{s.label}</Text>
+    <View style={[styles.statusBadgeContainer, s.badge]}>
+      <View style={[styles.statusDot, s.dot]} />
+      <Text style={[styles.statusLabel, s.text]}>{s.label}</Text>
     </View>
   );
 };
 
-// ─── Booking Card (now with Edit & Delete buttons) ──────────────────────────
 const BookingCard = React.memo(({ item, index, onEdit, onDelete, onView }) => (
   <Animated.View entering={FadeInDown.delay(index * 40).springify()}>
     <View
-      className="bg-white mx-3 mb-3 rounded-2xl p-4 border border-slate-100"
-      style={{ shadowColor: "#1e3a8a", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 }}
+      style={styles.bookingCard}
     >
-      <View className="flex-row items-start justify-between mb-3">
-        <View className="flex-row items-center gap-3 flex-1">
-          <View className="bg-blue-50 p-2.5 rounded-xl">
+      <View style={styles.bookingCardHeader}>
+        <View style={styles.bookingCardLeft}>
+          <View style={styles.bookingIconBox}>
             <MaterialCommunityIcons name="ticket-confirmation-outline" size={22} color="#1e3a8a" />
           </View>
-          <View className="flex-1">
-            <Text className="text-base font-black text-slate-900" numberOfLines={1}>
+          <View style={styles.bookingRefContainer}>
+            <Text style={styles.bookingRef} numberOfLines={1}>
               {item.booking_reference}
             </Text>
-            <Text className="text-xs font-bold text-slate-500">
+            <Text style={styles.bookingName}>
               {item.user_name}
             </Text>
           </View>
@@ -274,40 +254,40 @@ const BookingCard = React.memo(({ item, index, onEdit, onDelete, onView }) => (
         <StatusBadge status={item.status} />
       </View>
 
-      <View className="flex-row flex-wrap gap-3 pt-3 mb-3 border-t border-slate-50">
-        <View className="flex-row items-center gap-1">
+      <View style={styles.bookingDetails}>
+        <View style={styles.bookingDetailItem}>
           <Ionicons name="navigate-outline" size={13} color="#94a3b8" />
-          <Text className="text-xs font-bold text-slate-600">
+          <Text style={styles.bookingDetailText}>
             {item.origin} → {item.destination}
           </Text>
         </View>
-        <View className="flex-row items-center gap-1">
+        <View style={styles.bookingDetailItem}>
           <Ionicons name="time-outline" size={13} color="#94a3b8" />
-          <Text className="text-xs font-bold text-slate-600">{formatDateTime(item.departure_time)}</Text>
+          <Text style={styles.bookingDetailText}>{formatDateTime(item.departure_time)}</Text>
         </View>
-        <View className="flex-row items-center gap-1">
+        <View style={styles.bookingDetailItem}>
           <Ionicons name="bus-outline" size={13} color="#94a3b8" />
-          <Text className="text-xs font-bold text-slate-600">{item.bus_number} ({item.bus_type})</Text>
+          <Text style={styles.bookingDetailText}>{item.bus_number} ({item.bus_type})</Text>
         </View>
       </View>
 
-      <View className="flex-row items-center justify-between">
-        <Text className="text-sm font-black text-blue-900">Rs. {item.total_amount}</Text>
-        <View className="flex-row gap-2">
-          <TouchableOpacity onPress={() => onView(item)} className="flex-row items-center gap-1 bg-blue-50 px-4 py-2 rounded-xl">
+      <View style={styles.bookingCardFooter}>
+        <Text style={styles.bookingAmount}>Rs. {item.total_amount}</Text>
+        <View style={styles.bookingActions}>
+          <TouchableOpacity onPress={() => onView(item)} style={styles.actionBtnView}>
             <Ionicons name="eye-outline" size={13} color="#1e3a8a" />
-            <Text className="text-xs font-extrabold text-blue-700">View</Text>
+            <Text style={styles.actionBtnTextView}>View</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => onEdit(item)} className="flex-row items-center gap-1 bg-slate-100 px-4 py-2 rounded-xl">
+          <TouchableOpacity onPress={() => onEdit(item)} style={styles.actionBtnEdit}>
             <Ionicons name="pencil-outline" size={13} color="#475569" />
-            <Text className="text-xs font-extrabold text-slate-600">Edit</Text>
+            <Text style={styles.actionBtnTextEdit}>Edit</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => onDelete(item.id, item.booking_reference)}
-            className="flex-row items-center gap-1 bg-red-50 px-4 py-2 rounded-xl"
+            style={styles.actionBtnDelete}
           >
             <Ionicons name="trash-outline" size={13} color="#ef4444" />
-            <Text className="text-xs font-extrabold text-red-500">Delete</Text>
+            <Text style={styles.actionBtnTextDelete}>Delete</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -315,7 +295,6 @@ const BookingCard = React.memo(({ item, index, onEdit, onDelete, onView }) => (
   </Animated.View>
 ));
 
-// ─── Create / Edit Form Modal ────────────────────────────────────────────────
 const BookingForm = ({ visible, editingBooking, form, setForm, saving, onSave, onClose, users, schedules }) => {
   const userOptions = users.map(u => ({ label: `${u.full_name} (${u.email})`, value: u.id.toString() }));
   const scheduleOptions = schedules.map(s => ({
@@ -328,25 +307,25 @@ const BookingForm = ({ visible, editingBooking, form, setForm, saving, onSave, o
       <Modal
         visible={visible}
         onDismiss={onClose}
-        contentContainerStyle={{ backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%" }}
+        contentContainerStyle={styles.modalContent}
       >
-        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-          <View style={{ flex: 1 }}>
-            <View className="flex-row items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
+        <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+          <View style={styles.flex1}>
+            <View style={styles.modalHeader}>
               <View>
-                <Text className="text-lg font-black text-slate-900">
+                <Text style={styles.modalTitle}>
                   {editingBooking ? "Edit Booking" : "New Booking"}
                 </Text>
-                <Text className="text-xs text-slate-400 mt-0.5">
+                <Text style={styles.modalSubtitle}>
                   {editingBooking ? `Updating ${editingBooking.booking_reference}` : "Create a new booking"}
                 </Text>
               </View>
-              <TouchableOpacity onPress={onClose} className="w-9 h-9 bg-slate-100 rounded-xl items-center justify-center">
+              <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                 <Ionicons name="close" size={17} color="#64748b" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 30 }} className="px-5" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView style={styles.flex1} contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <SectionLabel>Passenger</SectionLabel>
               <Dropdown label="User" value={form.user_id} options={userOptions} onSelect={(v) => setForm({ ...form, user_id: v })} />
 
@@ -359,18 +338,16 @@ const BookingForm = ({ visible, editingBooking, form, setForm, saving, onSave, o
               <SectionLabel>Status</SectionLabel>
               <PillRow options={BOOKING_STATUSES} value={form.status} onChange={(v) => setForm({ ...form, status: v })} />
 
-              {/* Action buttons */}
-              <View className="flex-row gap-3 mt-4 mb-10">
-                <TouchableOpacity onPress={onClose} className="flex-1 py-4 rounded-2xl items-center bg-slate-100 border border-slate-200">
-                  <Text className="font-extrabold text-slate-500 text-sm">Cancel</Text>
+              <View style={styles.formActions}>
+                <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={onSave}
                   disabled={saving}
-                  className="flex-[2] py-4 rounded-2xl items-center bg-blue-900"
-                  style={{ shadowColor: "#1e3a8a", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 }}
+                  style={styles.saveBtn}
                 >
-                  {saving ? <ActivityIndicator color="#fff" /> : <Text className="font-black text-white text-sm">{editingBooking ? "UPDATE BOOKING" : "CREATE BOOKING"}</Text>}
+                  {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>{editingBooking ? "UPDATE BOOKING" : "CREATE BOOKING"}</Text>}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -381,8 +358,6 @@ const BookingForm = ({ visible, editingBooking, form, setForm, saving, onSave, o
   );
 };
 
-// ─── View Booking Modal (unchanged from previous version) ───────────────────
-// ─── View Booking Modal ──────────────────────────────────────────────────────
 const ViewBookingModal = ({ visible, booking, onClose }) => {
   if (!booking) return null;
   return (
@@ -390,48 +365,46 @@ const ViewBookingModal = ({ visible, booking, onClose }) => {
       <Modal
         visible={visible}
         onDismiss={onClose}
-        contentContainerStyle={{ backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%" }}
+        contentContainerStyle={styles.modalContent}
       >
-        <View style={{ flex: 1 }}>
-          <View className="flex-row items-center justify-between px-5 pt-5 pb-4 border-b border-slate-100">
+        <View style={styles.flex1}>
+          <View style={styles.modalHeader}>
             <View>
-              <Text className="text-lg font-black text-slate-900">Booking Details</Text>
-              <Text className="text-xs text-slate-400 mt-0.5">{booking.booking_reference}</Text>
+              <Text style={styles.modalTitle}>Booking Details</Text>
+              <Text style={styles.modalSubtitle}>{booking.booking_reference}</Text>
             </View>
-            <TouchableOpacity onPress={onClose} className="w-9 h-9 bg-slate-100 rounded-xl items-center justify-center">
+            <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
               <Ionicons name="close" size={17} color="#64748b" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 30 }} className="px-5" showsVerticalScrollIndicator={false}>
-            {/* Status badge */}
-            <View className="mt-4 mb-3">
+          <ScrollView style={styles.flex1} contentContainerStyle={{ paddingBottom: 30, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+            <View style={styles.viewStatusContainer}>
               <StatusBadge status={booking.status} />
             </View>
 
-            {/* Basic info */}
-            <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">Passenger</Text>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">{booking.user_name}</Text></View>
+            <Text style={styles.sectionLabel}>Passenger</Text>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>{booking.user_name}</Text></View>
 
-            <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">Route</Text>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">{booking.origin} → {booking.destination}</Text></View>
+            <Text style={styles.sectionLabel}>Route</Text>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>{booking.origin} → {booking.destination}</Text></View>
 
-            <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">Schedule</Text>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">Departure: {formatDateTime(booking.departure_time)}</Text></View>
+            <Text style={styles.sectionLabel}>Schedule</Text>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>Departure: {formatDateTime(booking.departure_time)}</Text></View>
 
-            <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">Bus</Text>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">{booking.bus_number} ({booking.bus_type})</Text></View>
+            <Text style={styles.sectionLabel}>Bus</Text>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>{booking.bus_number} ({booking.bus_type})</Text></View>
 
-            <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">Payment</Text>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">Amount: Rs. {booking.total_amount}</Text></View>
+            <Text style={styles.sectionLabel}>Payment</Text>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>Amount: Rs. {booking.total_amount}</Text></View>
 
-            <Text className="text-blue-900 text-[10px] font-black uppercase tracking-widest mt-5 mb-2">Dates</Text>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">Created: {formatDateTime(booking.created_at)}</Text></View>
-            <View className="mb-3"><Text className="text-sm font-semibold text-slate-900">Confirmed: {formatDateTime(booking.confirmed_at) || "—"}</Text></View>
+            <Text style={styles.sectionLabel}>Dates</Text>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>Created: {formatDateTime(booking.created_at)}</Text></View>
+            <View style={styles.viewField}><Text style={styles.viewFieldValue}>Confirmed: {formatDateTime(booking.confirmed_at) || "—"}</Text></View>
 
-            <View className="flex-row gap-3 mt-4 mb-10">
-              <TouchableOpacity onPress={onClose} className="flex-1 py-4 rounded-2xl items-center bg-slate-100 border border-slate-200">
-                <Text className="font-extrabold text-slate-500 text-sm">Close</Text>
+            <View style={styles.formActions}>
+              <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
+                <Text style={styles.cancelBtnText}>Close</Text>
               </TouchableOpacity>
             </View>
           </ScrollView>
@@ -440,7 +413,7 @@ const ViewBookingModal = ({ visible, booking, onClose }) => {
     </Portal>
   );
 };
-// ─── Main Screen ─────────────────────────────────────────────────────────────
+
 export default function AdminBookings() {
   const {
     bookings,
@@ -541,31 +514,29 @@ export default function AdminBookings() {
   const totalPages = Math.ceil(totalItems / limit) || 1;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-slate-50">
+    <SafeAreaView style={styles.screen}>
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
 
-      {/* Header */}
-      <View className="bg-blue-900 px-4 pt-4 pb-4">
-        <View className="flex-row items-center justify-between mb-3">
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
           <View>
-            <Text className="text-xl font-black text-white tracking-tight">Booking Manager</Text>
-            <Text className="text-xs text-blue-300 font-semibold mt-0.5">
+            <Text style={styles.headerTitle}>Booking Manager</Text>
+            <Text style={styles.headerCount}>
               {totalItems} booking{totalItems !== 1 ? "s" : ""} found
             </Text>
           </View>
 
-          <View className="flex-row items-center gap-2">
+          <View style={styles.headerActions}>
             <TouchableOpacity
               onPress={() => setExportModalVisible(true)}
               disabled={exporting || bookings.length === 0}
-              className="w-11 h-11 rounded-xl items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              style={styles.exportBtn}
             >
               {exporting ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="share-outline" size={20} color="#fff" />}
             </TouchableOpacity>
-            <TouchableOpacity onPress={openCreate} className="flex-row items-center gap-1.5 bg-white px-4 h-11 rounded-xl">
+            <TouchableOpacity onPress={openCreate} style={styles.addBtn}>
               <Ionicons name="add-circle" size={17} color="#1e3a8a" />
-              <Text className="font-black text-blue-900 text-xs">ADD BOOKING</Text>
+              <Text style={styles.addBtnText}>ADD BOOKING</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -575,22 +546,21 @@ export default function AdminBookings() {
           onChangeText={handleSearch}
           value={searchInput}
           elevation={0}
-          style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 14, height: 46 }}
-          inputStyle={{ fontSize: 13, fontWeight: "600", color: "#fff" }}
+          style={styles.searchbar}
+          inputStyle={styles.searchbarInput}
           placeholderTextColor="rgba(255,255,255,0.4)"
           iconColor="rgba(255,255,255,0.6)"
         />
       </View>
 
-      {/* Content */}
       {loading && !refreshing ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={styles.loadingContainer}>
           <ActivityIndicator color="#1e3a8a" size="large" />
-          <Text className="mt-3 text-slate-400 font-bold text-sm">Loading bookings...</Text>
+          <Text style={styles.loadingText}>Loading bookings...</Text>
         </View>
       ) : (
         <FlatList
-          style={{ flex: 1 }}
+          style={styles.flex1}
           data={bookings}
           keyExtractor={(item) => item.id?.toString()}
           renderItem={({ item, index }) => (
@@ -607,16 +577,16 @@ export default function AdminBookings() {
           nestedScrollEnabled={true}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
-            <View className="bg-white flex-row border-b border-slate-100">
+            <View style={styles.statsBar}>
               {[
                 { label: "Total",       val: totalItems },
                 { label: "Confirmed",   val: bookings.filter(b => b.status === "confirmed").length },
                 { label: "Pending",     val: bookings.filter(b => b.status === "pending_payment").length },
                 { label: "Cancelled",   val: bookings.filter(b => b.status === "cancelled").length },
               ].map(({ label, val }, i, arr) => (
-                <View key={label} className={`flex-1 items-center py-3 ${i < arr.length - 1 ? "border-r border-slate-100" : ""}`}>
-                  <Text className="text-xl font-black text-blue-900">{val}</Text>
-                  <Text className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{label}</Text>
+                <View key={label} style={[styles.statBox, i < arr.length - 1 && styles.statBoxBorder]}>
+                  <Text style={styles.statValue}>{val}</Text>
+                  <Text style={styles.statLabel}>{label}</Text>
                 </View>
               ))}
             </View>
@@ -630,40 +600,40 @@ export default function AdminBookings() {
             />
           }
           ListEmptyComponent={() => (
-            <View className="items-center pt-24 px-10">
+            <View style={styles.emptyContainer}>
               <MaterialCommunityIcons name="ticket-outline" size={72} color="#e2e8f0" />
-              <Text className="mt-4 text-slate-400 font-extrabold text-base text-center">
+              <Text style={styles.emptyText}>
                 {searchQuery ? `No results for "${searchQuery}"` : "No bookings found"}
               </Text>
               {!searchQuery && (
-                <TouchableOpacity onPress={openCreate} className="mt-5 flex-row items-center gap-2 bg-blue-900 px-6 py-3 rounded-2xl">
+                <TouchableOpacity onPress={openCreate} style={styles.emptyAddBtn}>
                   <Ionicons name="add" size={16} color="#fff" />
-                  <Text className="text-white font-black text-sm">Add First Booking</Text>
+                  <Text style={styles.emptyAddBtnText}>Add First Booking</Text>
                 </TouchableOpacity>
               )}
             </View>
           )}
           ListFooterComponent={() =>
             bookings.length > 0 ? (
-              <View className="mx-3 mt-1 mb-6">
-                <View className="flex-row items-center justify-between bg-white rounded-2xl px-4 py-3 border border-slate-100">
-                  <Text className="text-xs text-slate-400 font-bold">
+              <View style={styles.footerContainer}>
+                <View style={styles.footer}>
+                  <Text style={styles.footerText}>
                     Page {page} / {totalPages} · {bookings.length} of {totalItems}
                   </Text>
-                  <View className="flex-row gap-2">
+                  <View style={styles.pagination}>
                     <TouchableOpacity
                       disabled={page <= 1}
                       onPress={() => updatePagination("bookings", { page: page - 1 })}
-                      className={`px-4 py-2 rounded-xl border ${page <= 1 ? "bg-slate-50 border-slate-200" : "bg-blue-900 border-blue-900"}`}
+                      style={[styles.paginationBtn, page <= 1 ? styles.paginationBtnDisabled : styles.paginationBtnActive]}
                     >
-                      <Text className={`text-xs font-extrabold ${page <= 1 ? "text-slate-300" : "text-white"}`}>← Prev</Text>
+                      <Text style={[styles.paginationText, page <= 1 ? styles.paginationTextDisabled : styles.paginationTextActive]}>← Prev</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       disabled={page >= totalPages}
                       onPress={() => updatePagination("bookings", { page: page + 1 })}
-                      className={`px-4 py-2 rounded-xl border ${page >= totalPages ? "bg-slate-50 border-slate-200" : "bg-blue-900 border-blue-900"}`}
+                      style={[styles.paginationBtn, page >= totalPages ? styles.paginationBtnDisabled : styles.paginationBtnActive]}
                     >
-                      <Text className={`text-xs font-extrabold ${page >= totalPages ? "text-slate-300" : "text-white"}`}>Next →</Text>
+                      <Text style={[styles.paginationText, page >= totalPages ? styles.paginationTextDisabled : styles.paginationTextActive]}>Next →</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -673,7 +643,6 @@ export default function AdminBookings() {
         />
       )}
 
-      {/* Form Modal */}
       <BookingForm
         visible={modalVisible}
         editingBooking={editingBooking}
@@ -686,21 +655,19 @@ export default function AdminBookings() {
         schedules={schedules}
       />
 
-      {/* View Modal */}
       <ViewBookingModal
         visible={viewModalVisible}
         booking={viewingBooking}
         onClose={() => setViewModalVisible(false)}
       />
 
-      {/* Export modal */}
       <Portal>
         <Modal
           visible={exportModalVisible}
           onDismiss={() => setExportModalVisible(false)}
-          contentContainerStyle={{ backgroundColor: "white", marginHorizontal: 40, borderRadius: 16, padding: 16 }}
+          contentContainerStyle={styles.exportModal}
         >
-          <Text className="text-base font-black text-slate-800 mb-3">Export Booking Data</Text>
+          <Text style={styles.exportModalTitle}>Export Booking Data</Text>
           {[
             { key: "csv", icon: "grid-outline", label: "Export CSV" },
             { key: "pdf", icon: "document-text-outline", label: "Export PDF" },
@@ -708,17 +675,502 @@ export default function AdminBookings() {
             <TouchableOpacity
               key={key}
               onPress={() => handleExport(key)}
-              className="flex-row items-center gap-3 px-4 py-3 border-b border-slate-100"
+              style={styles.exportOption}
             >
               <Ionicons name={icon} size={18} color="#1e3a8a" />
-              <Text className="text-sm font-bold text-slate-800">{label}</Text>
+              <Text style={styles.exportOptionText}>{label}</Text>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity onPress={() => setExportModalVisible(false)} className="mt-2 items-center py-2">
-            <Text className="text-xs font-bold text-slate-400">Cancel</Text>
+          <TouchableOpacity onPress={() => setExportModalVisible(false)} style={styles.exportCancel}>
+            <Text style={styles.exportCancelText}>Cancel</Text>
           </TouchableOpacity>
         </Modal>
       </Portal>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  flex1: { flex: 1 },
+  screen: { flex: 1, backgroundColor: '#F8FAFC' },
+  sectionLabel: {
+    color: '#1E3A8A',
+    fontSize: 10,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  dropdownAnchor: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  dropdownAnchorText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  pillRowContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  pill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 9999,
+    borderWidth: 1,
+  },
+  pillInactive: {
+    backgroundColor: '#F1F5F9',
+    borderColor: '#E2E8F0',
+  },
+  pillText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  pillTextActive: {
+    color: '#FFFFFF',
+  },
+  pillTextInactive: {
+    color: '#64748B',
+  },
+  statusBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusLabel: {
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  bookingCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  bookingCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  bookingCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  bookingIconBox: {
+    backgroundColor: '#EFF6FF',
+    padding: 10,
+    borderRadius: 14,
+  },
+  bookingRefContainer: {
+    flex: 1,
+  },
+  bookingRef: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  bookingName: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  bookingDetails: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    paddingTop: 12,
+    marginBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F8FAFC',
+  },
+  bookingDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  bookingDetailText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  bookingCardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bookingAmount: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#1E3A8A',
+  },
+  bookingActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionBtnView: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  actionBtnTextView: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#1D4ED8',
+  },
+  actionBtnEdit: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  actionBtnTextEdit: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#475569',
+  },
+  actionBtnDelete: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF2F2',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 14,
+  },
+  actionBtnTextDelete: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#EF4444',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    margin: 14,
+    borderRadius: 24,
+    maxHeight: '92%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 10,
+    color: '#94A3B8',
+    marginTop: 2,
+  },
+  closeBtn: {
+    width: 36,
+    height: 36,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 16,
+    marginBottom: 40,
+  },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  cancelBtnText: {
+    fontWeight: '800',
+    color: '#64748B',
+    fontSize: 12,
+  },
+  saveBtn: {
+    flex: 2,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    backgroundColor: '#1E3A8A',
+    shadowColor: '#1e3a8a',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  saveBtnText: {
+    fontWeight: '900',
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  viewStatusContainer: {
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  viewField: {
+    marginBottom: 12,
+  },
+  viewFieldValue: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  header: {
+    backgroundColor: '#1E3A8A',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  headerCount: {
+    fontSize: 10,
+    color: '#93C5FD',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  exportBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  addBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    height: 44,
+    borderRadius: 14,
+  },
+  addBtnText: {
+    fontWeight: '900',
+    color: '#1E3A8A',
+    fontSize: 10,
+  },
+  searchbar: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 14,
+    height: 46,
+  },
+  searchbarInput: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#94A3B8',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  statsBar: {
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  statBoxBorder: {
+    borderRightWidth: 1,
+    borderRightColor: '#F1F5F9',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#1E3A8A',
+  },
+  statLabel: {
+    fontSize: 9,
+    color: '#94A3B8',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 2,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingTop: 96,
+    paddingHorizontal: 40,
+  },
+  emptyText: {
+    marginTop: 16,
+    color: '#94A3B8',
+    fontWeight: '800',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  emptyAddBtn: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#1E3A8A',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 16,
+  },
+  emptyAddBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '900',
+    fontSize: 12,
+  },
+  footerContainer: {
+    marginHorizontal: 12,
+    marginTop: 4,
+    marginBottom: 24,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  footerText: {
+    fontSize: 10,
+    color: '#94A3B8',
+    fontWeight: '700',
+  },
+  pagination: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  paginationBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  paginationBtnDisabled: {
+    backgroundColor: '#F8FAFC',
+    borderColor: '#E2E8F0',
+  },
+  paginationBtnActive: {
+    backgroundColor: '#1E3A8A',
+    borderColor: '#1E3A8A',
+  },
+  paginationText: {
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  paginationTextDisabled: {
+    color: '#CBD5E1',
+  },
+  paginationTextActive: {
+    color: '#FFFFFF',
+  },
+  exportModal: {
+    backgroundColor: 'white',
+    marginHorizontal: 40,
+    borderRadius: 16,
+    padding: 16,
+  },
+  exportModalTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#1E293B',
+    marginBottom: 12,
+  },
+  exportOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  exportOptionText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+  exportCancel: {
+    marginTop: 8,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  exportCancelText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+});

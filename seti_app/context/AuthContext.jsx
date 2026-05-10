@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as authApi from '../api/auth';
 import { 
   setAccessToken, 
@@ -7,10 +6,10 @@ import {
   clearAuthData, 
   getUser as getStoredUser, 
   setUser as setStoredUser,
-  getAccessToken, 
-  setItem
+  getAccessToken,
+  getRefreshToken
 } from '../utils/storage';
-import { STORAGE_KEYS } from '../utils/constants';
+import { setAuthToken } from '../api/client';
 
 export const AuthContext = createContext();
 
@@ -26,14 +25,57 @@ export const AuthProvider = ({ children }) => {
       try {
         const storedUser = await getStoredUser();
         const token = await getAccessToken();
-        setItem('token', token); // Store token in AsyncStorage for API calls if needed
-        setAccessToken(token); // Set token in memory for API client
-        if (storedUser && token) {
-          setUser(storedUser);
+        
+        if (token) {
+          setAuthToken(token);
+        }
+
+        if (!storedUser || !token) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Try to verify the token is still valid by fetching profile
+        // If it fails with 401, the interceptor will auto-refresh using refresh token
+        try {
+          const response = await authApi.getProfile();
+          const userData = response.data.data.user;
+          await setStoredUser(userData);
+          setUser(userData);
           setIsAuthenticated(true);
+        } catch (err) {
+          // Token might be expired - try refresh via stored refresh token
+          const refreshToken = await getRefreshToken();
+          if (refreshToken) {
+            try {
+              const refreshResponse = await authApi.refreshToken(refreshToken);
+              const { accessToken: newAccessToken, refreshToken: newRefreshToken } = refreshResponse.data.data;
+              setAuthToken(newAccessToken);
+              await setAccessToken(newAccessToken);
+              await setRefreshToken(newRefreshToken);
+              // Fetch fresh profile with new token
+              const profileRes = await authApi.getProfile();
+              const freshUser = profileRes.data.data.user;
+              await setStoredUser(freshUser);
+              setUser(freshUser);
+              setIsAuthenticated(true);
+            } catch (refreshErr) {
+              setAuthToken(null);
+              await clearAuthData();
+              setUser(null);
+              setIsAuthenticated(false);
+            }
+          } else {
+            setAuthToken(null);
+            await clearAuthData();
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         }
       } catch (e) {
         console.error("Failed to load auth state", e);
+        setAuthToken(null);
+        await clearAuthData();
       } finally {
         setIsLoading(false);
       }
@@ -47,6 +89,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authApi.login(email, password);
       const { accessToken, refreshToken, user: userData } = response.data.data;
+      setAuthToken(accessToken);
       await setAccessToken(accessToken);
       await setRefreshToken(refreshToken);
       await setStoredUser(userData);
@@ -84,6 +127,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Logout API error:', err);
     } finally {
+      setAuthToken(null);
       await clearAuthData();
       setUser(null);
       setIsAuthenticated(false);
@@ -101,6 +145,7 @@ export const AuthProvider = ({ children }) => {
       return;
     }
     
+    setAuthToken(token);
     setIsLoading(true);
     try {
       const response = await authApi.getProfile();
@@ -109,6 +154,7 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setIsAuthenticated(true);
     } catch (err) {
+      setAuthToken(null);
       await clearAuthData();
       setUser(null);
       setIsAuthenticated(false);
@@ -152,6 +198,11 @@ export const AuthProvider = ({ children }) => {
 
   const clearError = () => setError(null);
 
+  const updateLocalUser = async (userData) => {
+    await setStoredUser(userData);
+    setUser(userData);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -167,6 +218,7 @@ export const AuthProvider = ({ children }) => {
         updateProfile,
         changePassword,
         clearError,
+        updateLocalUser,
       }}
     >
       {children}

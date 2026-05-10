@@ -11,7 +11,17 @@ export const validate = (schema) => {
         const { error } = schema.validate(req.body, { abortEarly: false });
         if (error) {
             const errors = error.details.map(detail => detail.message);
-            return errorResponse(res, 'Validation error', 400, errors);
+            const fields = {};
+            error.details.forEach(detail => {
+                const field = detail.path.join('.');
+                fields[field] = detail.message;
+            });
+            return res.status(400).json({
+                success: false,
+                message: 'Validation error',
+                errors,
+                fields
+            });
         }
         next();
     };
@@ -38,7 +48,6 @@ export const roleUpdateSchema = Joi.object({
 export const changePasswordSchema = Joi.object({
     email: Joi.string().email().required(),
     newPassword: Joi.string().min(6).required(),
-    token: Joi.string().required()
 });
 
 export const resetPasswordRequestSchema = Joi.object({
@@ -54,20 +63,20 @@ export const resetPasswordSchema = Joi.object({
 // ------------------- Bus Schemas -------------------
 export const busSchema = Joi.object({
     bus_number: Joi.string().required(),
-    registration_number: Joi.string().optional(),
+    registration_number: Joi.string().allow('', null).optional(),
     total_seats: Joi.number().integer().min(10).max(80).required(),
     seat_layout: Joi.object().required(),
     amenities: Joi.array().items(Joi.string()).optional(),
     bus_type: Joi.string().valid('Standard', 'Luxury', 'Sleeper', 'Mini').default('Standard'),
     status: Joi.string().valid('active', 'maintenance', 'retired', 'inactive').default('active'),
-    manufacturer: Joi.string().optional(),
-    model: Joi.string().optional(),
-    year: Joi.number().integer().min(1990).max(new Date().getFullYear()).optional(),
-    color: Joi.string().optional(),
-    license_plate: Joi.string().optional(),
-    insurance_expiry: Joi.date().optional(),
-    fitness_expiry: Joi.date().optional(),
-    notes: Joi.string().optional()
+    manufacturer: Joi.string().allow(null).optional(),
+    model: Joi.string().allow(null).optional(),
+    year: Joi.number().integer().min(1990).max(new Date().getFullYear()).allow(null).optional(),
+    color: Joi.string().allow(null).optional(),
+    license_plate: Joi.string().allow(null).optional(),
+    insurance_expiry: Joi.date().allow(null).optional(),
+    fitness_expiry: Joi.date().allow(null).optional(),
+    notes: Joi.string().allow(null).optional()
 });
 
 export const busUpdateSchema = Joi.object({
@@ -78,14 +87,14 @@ export const busUpdateSchema = Joi.object({
     amenities: Joi.array().items(Joi.string()).optional(),
     bus_type: Joi.string().valid('Standard', 'Luxury', 'Sleeper', 'Mini').optional(),
     status: Joi.string().valid('active', 'maintenance', 'retired', 'inactive').optional(),
-    manufacturer: Joi.string().optional(),
-    model: Joi.string().optional(),
-    year: Joi.number().integer().min(1990).max(new Date().getFullYear()).optional(),
-    color: Joi.string().optional(),
-    license_plate: Joi.string().optional(),
-    insurance_expiry: Joi.date().optional(),
-    fitness_expiry: Joi.date().optional(),
-    notes: Joi.string().optional()
+    manufacturer: Joi.string().allow(null).optional(),
+    model: Joi.string().allow(null).optional(),
+    year: Joi.number().integer().min(1990).max(new Date().getFullYear()).allow(null).optional(),
+    color: Joi.string().allow(null).optional(),
+    license_plate: Joi.string().allow(null).optional(),
+    insurance_expiry: Joi.date().allow(null).optional(),
+    fitness_expiry: Joi.date().allow(null).optional(),
+    notes: Joi.string().allow(null).optional()
 });
 
 // ------------------- Route Schemas -------------------
