@@ -100,7 +100,8 @@ export const deleteBus = async (req, res, next) => {
     try {
         const bus = await Bus.findById(req.params.id);
         if (!bus) return errorResponse(res, 'Bus not found', 404);
-        await Bus.delete(req.params.id);
+        const affected = await Bus.delete(req.params.id);
+        if (!affected) return errorResponse(res, 'Could not delete bus. No rows affected.', 500);
         successResponse(res, 'Bus deleted successfully');
     } catch (err) {
         next(err);

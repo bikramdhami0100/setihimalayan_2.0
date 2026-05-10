@@ -5,19 +5,22 @@ class Schedule {
         const {
             bus_id, route_id, departure_time, arrival_time, base_price,
             available_seats, total_seats, driver_name, driver_phone,
-            conductor_name, conductor_phone, notes
+            conductor_name, conductor_phone, notes,
+            status, delay_minutes
         } = scheduleData;
 
         const [result] = await pool.execute(
             `INSERT INTO schedules (
                 bus_id, route_id, departure_time, arrival_time, base_price,
                 available_seats, total_seats, driver_name, driver_phone,
-                conductor_name, conductor_phone, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                conductor_name, conductor_phone, notes,
+                status, delay_minutes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 bus_id, route_id, departure_time, arrival_time, base_price,
                 available_seats, total_seats, driver_name, driver_phone,
-                conductor_name, conductor_phone, notes
+                conductor_name, conductor_phone, notes,
+                status || 'scheduled', delay_minutes || 0
             ]
         );
         return result.insertId;
@@ -106,8 +109,21 @@ class Schedule {
         values.push(search, search, search);
     }
 
-    // ✅ ORDER BY comes BEFORE LIMIT
-    query += ' ORDER BY s.departure_time ASC';
+    // Sorting with whitelist to prevent SQL injection
+    const allowedSortFields = {
+        id: 's.id',
+        bus_number: 'b.bus_number',
+        driver_name: 's.driver_name',
+        departure_time: 's.departure_time',
+        arrival_time: 's.arrival_time',
+        available_seats: 's.available_seats',
+        base_price: 's.base_price',
+        status: 's.status',
+        created_at: 's.created_at',
+    };
+    const sortBy = filters.sortBy && allowedSortFields[filters.sortBy] ? allowedSortFields[filters.sortBy] : 's.departure_time';
+    const sortOrder = filters.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    query += ` ORDER BY ${sortBy} ${sortOrder}`;
 
     if (filters.page && filters.limit) {
         const offset = (filters.page - 1) * filters.limit;
@@ -122,6 +138,26 @@ class Schedule {
     const [countRows] = await pool.execute(countQuery);
     return { schedule: rows, total: countRows[0].total  };
 }
+
+    static async update(id, data) {
+        const fields = [];
+        const values = [];
+        const allowed = ['bus_id', 'route_id', 'departure_time', 'arrival_time', 'base_price',
+            'total_seats', 'available_seats', 'status', 'delay_minutes',
+            'driver_name', 'driver_phone', 'conductor_name', 'conductor_phone', 'notes'];
+        for (const key of allowed) {
+            if (data[key] !== undefined) {
+                fields.push(`${key} = ?`);
+                values.push(data[key]);
+            }
+        }
+        if (fields.length === 0) return;
+        values.push(id);
+        await pool.execute(
+            `UPDATE schedules SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`,
+            values
+        );
+    }
 
     static async updateAvailableSeats(scheduleId, seatCountChange) {
         await pool.execute(

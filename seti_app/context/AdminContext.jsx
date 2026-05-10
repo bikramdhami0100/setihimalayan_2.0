@@ -98,7 +98,8 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
     try {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
-      const res = await bookingApi.getAllBookings({ page, limit, search });
+      const { sortBy, sortOrder } = getSort(key);
+      const res = await bookingApi.getAllBookings({ page, limit, search, sortBy, sortOrder });
       setBookings(res.data.data.bookings || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
     } catch (err) {
@@ -107,7 +108,7 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
       setKeyLoading(key, false);
       setKeyRefreshing(key, false);
     }
-  }, [paginations.bookings, searchQueries.bookings]);
+  }, [paginations.bookings, searchQueries.bookings, sortConfig.bookings]);
 
 
 const fetchRoutes = useCallback(async (isRefreshing = false) => {
@@ -145,7 +146,8 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
   try {
     const { page, limit } = getPagination(key);
     const search = getSearchQuery(key);
-    const res = await scheduleApi.getSchedules({ page, limit, search });
+    const { sortBy, sortOrder } = getSort(key);
+    const res = await scheduleApi.getSchedules({ page, limit, search, sortBy, sortOrder });
     setSchedules(res.data.data.schedules || []);
     updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
   } catch (err) {
@@ -154,7 +156,7 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
     setKeyLoading(key, false);
     setKeyRefreshing(key, false);
   }
-}, [paginations.schedules, searchQueries.schedules]);
+}, [paginations.schedules, searchQueries.schedules, sortConfig.schedules]);
   const { isAuthenticated } = useContext(AuthContext);
 
   useEffect(() => {

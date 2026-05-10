@@ -4,18 +4,17 @@ class Route {
     static async create(routeData) {
         const {
             origin, destination, distance_km, duration_minutes, base_price,
-            stops, description, route_image
+            description, route_image
         } = routeData;
 
         const [result] = await pool.execute(
             `INSERT INTO routes (
                 origin, destination, distance_km, duration_minutes, base_price,
-                stops, description, route_image
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                description, route_image
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
                 origin, destination, distance_km || null, duration_minutes || null,
-                base_price, stops ? JSON.stringify(stops) : null,
-                description, route_image
+                base_price, description, route_image
             ]
         );
         return result.insertId;
@@ -98,7 +97,7 @@ class Route {
         for (const [key, value] of Object.entries(updateData)) {
             if (value !== undefined) {
                 fields.push(`${key} = ?`);
-                values.push(key === 'stops' ? JSON.stringify(value) : value);
+                values.push(value);
             }
         }
         values.push(id);
@@ -127,6 +126,21 @@ class Route {
             'UPDATE routes SET popularity_score = popularity_score + 1 WHERE id = ?',
             [id]
         );
+    }
+
+    static async findByIdWithPoints(id) {
+        const [route] = await pool.execute(
+            'SELECT * FROM routes WHERE id = ? AND deleted_at IS NULL',
+            [id]
+        );
+        if (!route[0]) return null;
+
+        const [points] = await pool.execute(
+            `SELECT * FROM route_points WHERE route_id = ? ORDER BY point_order ASC`,
+            [id]
+        );
+
+        return { ...route[0], points };
     }
 }
 

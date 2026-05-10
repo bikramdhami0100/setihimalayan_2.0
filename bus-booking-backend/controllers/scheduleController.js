@@ -38,7 +38,7 @@ export const searchSchedules = async (req, res, next) => {
 
 export const getAllSchedules = async (req, res, next) => {
     try {
-        const { route_id,bus_id,from_date,to_date, status, search, page, limit } = req.query;
+        const { route_id, bus_id, from_date, to_date, status, search, page, limit, sortBy, sortOrder } = req.query;
         const filters = {
             route_id,
             bus_id,
@@ -46,9 +46,10 @@ export const getAllSchedules = async (req, res, next) => {
             to_date,
             status,
             search,
+            sortBy,
+            sortOrder,
             page: page ? parseInt(page) : undefined,
-            limit: limit ? parseInt(limit) : undefined
-
+            limit: limit ? parseInt(limit) : undefined,
         };
         const {schedule,total} = await Schedule.findAll(filters);
         successResponse(res, 'Schedules retrieved', { 

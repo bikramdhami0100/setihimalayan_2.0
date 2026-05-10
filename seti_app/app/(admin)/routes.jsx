@@ -10,7 +10,7 @@ import * as Print      from "expo-print";
 import * as Sharing    from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { createRoute, deleteRoute, updateRoute, getRoutes, getRouteById } from "../../api/routes";
+import { createRoute, deleteRoute, updateRoute, getRoutes } from "../../api/routes";
 import { useAdminData } from "../../context/AdminContext";
 import PdfViewer from "../../components/PdfViewer";
 
@@ -79,19 +79,29 @@ const toPayload = (f, isUpdate = false) => {
   if (!Array.isArray(stops)) stops = [];
 
   const payload = {
-    origin:           f.origin,
-    destination:      f.destination,
-    distance_km:      parseFloat(f.distance_km) || null,
-    duration_minutes: parseInt(f.duration_minutes) || null,
-    base_price:       parseFloat(f.base_price) || null,
-    is_active:        f.is_active === "active",
-    stops:            stops.length > 0 ? stops : [],
-    description:      f.description || null,
-    route_image:      f.route_image || null,
+    origin: f.origin,
+    destination: f.destination,
+    base_price: parseFloat(f.base_price),
   };
 
-  if (!isUpdate) {
-    payload.popularity_score = parseInt(f.popularity_score) || 0;
+  const dist = parseFloat(f.distance_km);
+  if (!isNaN(dist) && dist > 0) payload.distance_km = dist;
+
+  const dur = parseInt(f.duration_minutes);
+  if (!isNaN(dur) && dur > 0) payload.duration_minutes = dur;
+
+  if (f.description) payload.description = f.description;
+
+  if (f.route_image) payload.route_image = f.route_image;
+
+  if (stops.length > 0) {
+    payload.stops = stops.map((s) =>
+      typeof s === 'string' ? { location: s } : s
+    );
+  }
+
+  if (isUpdate) {
+    payload.is_active = f.is_active === "active";
   }
 
   return payload;
@@ -214,19 +224,17 @@ const exportCSV = async (routes) => {
 const exportPDF = async (routes) => {
   const html = buildHTML(routes);
   if (Platform.OS === "web") {
-    try {
-      const { uri } = await Print.printToFileAsync({ html });
-      if (uri) {
-        const anchor = document.createElement("a");
-        anchor.href = uri;
-        anchor.download = `routes_${Date.now()}.pdf`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        return;
-      }
-    } catch { /* fallback */ }
-    await Print.printAsync({ html });
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (!win) {
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `routes_${Date.now()}.html`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+    }
     return;
   }
   const { uri } = await Print.printToFileAsync({ html });
@@ -312,29 +320,31 @@ const RouteForm = ({ visible, editingRoute, form, setForm, formErrors, clearFiel
             <Field label="Destination *" value={form.destination} error={formErrors?.destination} onChangeText={clr("destination")} />
 
             <View style={styles.formRow}>
-              <View style={styles.formRowItem}><Field label="Distance (km)" value={form.distance_km} onChangeText={(t) => setForm({ ...form, distance_km: t })} keyboardType="numeric" /></View>
-              <View style={styles.formRowItem}><Field label="Duration (min)" value={form.duration_minutes} onChangeText={(t) => setForm({ ...form, duration_minutes: t })} keyboardType="numeric" /></View>
+              <View style={styles.formRowItem}><Field label="Distance (km)" value={form.distance_km} error={formErrors?.distance_km} onChangeText={clr("distance_km")} keyboardType="numeric" /></View>
+              <View style={styles.formRowItem}><Field label="Duration (min)" value={form.duration_minutes} error={formErrors?.duration_minutes} onChangeText={clr("duration_minutes")} keyboardType="numeric" /></View>
             </View>
             <View style={styles.formRow}>
               <View style={styles.formRowItem}><Field label="Base Fare *" value={form.base_price} error={formErrors?.base_price} onChangeText={clr("base_price")} keyboardType="numeric" /></View>
-              <View style={styles.formRowItem}><Field label="Popularity" value={form.popularity_score} onChangeText={(t) => setForm({ ...form, popularity_score: t })} keyboardType="numeric" /></View>
+              <View style={styles.formRowItem}><Field label="Popularity" value={form.popularity_score} error={formErrors?.popularity_score} onChangeText={clr("popularity_score")} keyboardType="numeric" /></View>
             </View>
 
             <SectionLabel>Status</SectionLabel>
             <PillRow options={STATUSES} value={form.is_active} onChange={(v) => setForm({ ...form, is_active: v })} />
+            {formErrors?.is_active ? <Text style={styles.fieldError}>{formErrors.is_active}</Text> : null}
 
             <SectionLabel>Stops (JSON array)</SectionLabel>
             <Field
               label='e.g. ["Sanga","Dhulikhel"]'
               value={form.stops}
-              onChangeText={(t) => setForm({ ...form, stops: t })}
+              error={formErrors?.stops}
+              onChangeText={clr("stops")}
               multiline
               numberOfLines={3}
             />
 
             <SectionLabel>Additional Info</SectionLabel>
-            <Field label="Description" value={form.description} onChangeText={(t) => setForm({ ...form, description: t })} multiline numberOfLines={2} />
-            <Field label="Route Image URL" value={form.route_image} onChangeText={(t) => setForm({ ...form, route_image: t })} />
+            <Field label="Description" value={form.description} error={formErrors?.description} onChangeText={clr("description")} multiline numberOfLines={2} />
+            <Field label="Route Image URL" value={form.route_image} error={formErrors?.route_image} onChangeText={clr("route_image")} />
 
             <View style={styles.formActions}>
               <TouchableOpacity onPress={onClose} style={styles.cancelBtn}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
@@ -553,22 +563,31 @@ export default function AdminRoutes() {
   };
 
   const handleDelete = (id, name) => {
-    if (!id) { Alert.alert("Error", "Invalid route ID. Cannot delete."); return; }
-    Alert.alert("Remove Route", `Delete route "${name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete", style: "destructive", onPress: async () => {
-          setDeleting(true);
-          try {
-            await deleteRoute(id);
-            Alert.alert("Success", "Route deleted successfully.", [{ text: "OK", onPress: () => { setDeleting(false); fetchRoutes(true); } }]);
-          } catch (error) {
-            setDeleting(false);
-            Alert.alert("Error", error.response?.data?.message || error.message || "Could not delete the route.");
-          }
-        },
-      },
-    ]);
+    if (!id) {
+      const msg = "Invalid route ID. Cannot delete.";
+      Platform.OS === "web" ? window.alert(msg) : Alert.alert("Error", msg);
+      return;
+    }
+    const doDelete = async () => {
+      setDeleting(true);
+      try {
+        await deleteRoute(id);
+        setDeleting(false);
+        fetchRoutes(true);
+      } catch (error) {
+        setDeleting(false);
+        const errMsg = error.response?.data?.message || error.message || "Could not delete the route.";
+        Platform.OS === "web" ? window.alert(errMsg) : Alert.alert("Error", errMsg);
+      }
+    };
+    if (Platform.OS === "web") {
+      if (window.confirm(`Delete route "${name}"?`)) doDelete();
+    } else {
+      Alert.alert("Remove Route", `Delete route "${name}"?`, [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: doDelete },
+      ]);
+    }
   };
 
   const handleExport = async (type) => {
@@ -659,18 +678,6 @@ export default function AdminRoutes() {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => openEdit(item)} style={styles.actionBtn}>
             <Ionicons name="pencil-outline" size={13} color="#475569" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={async () => {
-            try {
-              const routeDetail = await getRouteById(item.id);
-              const route = routeDetail.data.data.route;
-              const pdfHtml = buildHTML([route]);
-              const { uri } = await Print.printToFileAsync({ html: pdfHtml });
-              setPdfUri(uri);
-              setPdfModalVisible(true);
-            } catch { openView(item); }
-          }} style={[styles.actionBtn, { backgroundColor: "#F0FDF4" }]}>
-            <Ionicons name="document-text-outline" size={13} color="#16a34a" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDelete(item.id || item._id, `${item.origin} \u2192 ${item.destination}`)}

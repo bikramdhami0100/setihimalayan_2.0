@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, StatusBar, StyleSheet,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Portal, Modal, TextInput, Searchbar } from "react-native-paper";
+import { Portal, Modal, TextInput, Searchbar, Dialog, Button } from "react-native-paper";
 import { Calendar } from "react-native-calendars";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
@@ -522,6 +522,8 @@ export default function AdminBuses() {
   const [exporting, setExporting] = useState(false);
   const [exportRange, setExportRange] = useState("page");
   const [pageSizeModalVisible, setPageSizeModalVisible] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [formErrors, setFormErrors] = useState({});
   const debounceRef = useRef(null);
@@ -580,8 +582,10 @@ export default function AdminBuses() {
     if (!validateForm()) return;
     setSaving(true);
     try {
-      editingBus ? await updateBus(editingBus.id, toPayload(form)) : await createBus(toPayload(form));
+      editingBus ? await updateBus(editingBus.id, toPayload(form)) :
+      await createBus(toPayload(form));
       setModalVisible(false);
+
       setFormErrors({});
       Alert.alert("Success", editingBus ? "Bus updated successfully!" : "New bus added successfully!", [
         { text: "OK", onPress: () => fetchBuses(true) },
@@ -600,26 +604,39 @@ export default function AdminBuses() {
       if (fieldErrors && typeof fieldErrors === 'object') setFormErrors(fieldErrors);
       Alert.alert("Error", msg);
     }
-    finally { setSaving(false); }
+    finally { 
+      setSaving(false);
+      await fetchBuses(true);
+     }
   };
 
   const handleDelete = (id, name) => {
+    console.log(`Deleting bus id ${id} and name is `+ name);
     if (!id) { Alert.alert("Error", "Invalid bus ID. Cannot delete."); return; }
-    Alert.alert("Remove Vehicle", `Delete "${name}" from the fleet?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete", style: "destructive", onPress: async () => {
-          setDeleting(true);
-          try {
-            await deleteBus(id);
-            Alert.alert("Success", "Bus deleted successfully.", [{ text: "OK", onPress: () => { setDeleting(false); fetchBuses(true); } }]);
-          } catch (error) {
-            setDeleting(false);
-            Alert.alert("Error", error.response?.data?.message || error.message || "Could not delete the bus.");
-          }
-        }
-      },
-    ]);
+    setDeleteTarget({ id, name });
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { id } = deleteTarget;
+    setDeleting(true);
+    setDeleteConfirmVisible(false);
+    try {
+      await deleteBus(id);
+      Alert.alert("Success", "Bus deleted successfully.", [
+        { text: "OK", onPress: () => fetchBuses(true) },
+      ]);
+    } catch (error) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+      const msg = data?.message || error.message || "Could not delete the bus.";
+      Alert.alert("Delete Failed", `Status: ${status || "—"}\n${msg}`);
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+      await fetchBuses(true);
+    }
   };
 
   const handleExport = async (type) => {
@@ -709,18 +726,6 @@ export default function AdminBuses() {
           </TouchableOpacity>
           <TouchableOpacity onPress={() => openEdit(item)} style={styles.actionBtn}>
             <Ionicons name="pencil-outline" size={13} color="#475569" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={async () => {
-            try {
-              const busDetail = await getBusById(item.id);
-              const bus = busDetail.data.data.bus;
-              const pdfHtml = buildHTML([bus]);
-              const { uri } = await Print.printToFileAsync({ html: pdfHtml });
-              setPdfUri(uri);
-              setPdfModalVisible(true);
-            } catch { openView(item); }
-          }} style={[styles.actionBtn, { backgroundColor: "#F0FDF4" }]}>
-            <Ionicons name="document-text-outline" size={13} color="#16a34a" />
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => handleDelete(item.id || item._id, item.bus_number)}
@@ -910,6 +915,19 @@ export default function AdminBuses() {
             <Text style={styles.exportCancelText}>Cancel</Text>
           </TouchableOpacity>
         </Modal>
+      </Portal>
+
+      <Portal>
+        <Dialog visible={deleteConfirmVisible} onDismiss={() => { setDeleteConfirmVisible(false); setDeleteTarget(null); }}>
+          <Dialog.Title>Remove Vehicle</Dialog.Title>
+          <Dialog.Content>
+            <Text>Delete "{deleteTarget?.name}" from the fleet?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => { setDeleteConfirmVisible(false); setDeleteTarget(null); }}>Cancel</Button>
+            <Button onPress={confirmDelete} color="#ef4444">Delete</Button>
+          </Dialog.Actions>
+        </Dialog>
       </Portal>
     </SafeAreaView>
   );

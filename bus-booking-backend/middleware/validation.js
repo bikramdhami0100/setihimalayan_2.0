@@ -130,26 +130,33 @@ export const routeUpdateSchema = Joi.object({
 export const scheduleSchema = Joi.object({
     bus_id: Joi.number().integer().required(),
     route_id: Joi.number().integer().required(),
-    departure_time: Joi.date().greater('now').required(),
+    departure_time: Joi.date().required(),
     arrival_time: Joi.date().greater(Joi.ref('departure_time')).required(),
     base_price: Joi.number().positive().required(),
-    driver_name: Joi.string().optional(),
-    driver_phone: Joi.string().pattern(/^[0-9]{10}$/).optional(),
-    conductor_name: Joi.string().optional(),
-    conductor_phone: Joi.string().pattern(/^[0-9]{10}$/).optional(),
-    notes: Joi.string().optional()
+    total_seats: Joi.number().integer().min(1).optional(),
+    available_seats: Joi.number().integer().min(0).optional(),
+    status: Joi.string().valid('scheduled', 'active', 'completed', 'cancelled', 'delayed').optional(),
+    delay_minutes: Joi.number().integer().min(0).optional(),
+    driver_name: Joi.string().allow('', null).optional(),
+    driver_phone: Joi.string().pattern(/^[0-9]{7,15}$/).allow('', null).optional(),
+    conductor_name: Joi.string().allow('', null).optional(),
+    conductor_phone: Joi.string().pattern(/^[0-9]{7,15}$/).allow('', null).optional(),
+    notes: Joi.string().allow('', null).optional()
 });
 
 export const scheduleUpdateSchema = Joi.object({
-    departure_time: Joi.date().greater('now').optional(),
+    departure_time: Joi.date().optional(),
     arrival_time: Joi.date().optional(),
     base_price: Joi.number().positive().optional(),
-    driver_name: Joi.string().optional(),
-    driver_phone: Joi.string().pattern(/^[0-9]{10}$/).optional(),
-    conductor_name: Joi.string().optional(),
-    conductor_phone: Joi.string().pattern(/^[0-9]{10}$/).optional(),
-    notes: Joi.string().optional(),
-    status: Joi.string().valid('scheduled', 'cancelled', 'completed', 'delayed').optional()
+    total_seats: Joi.number().integer().min(1).optional(),
+    available_seats: Joi.number().integer().min(0).optional(),
+    status: Joi.string().valid('scheduled', 'active', 'completed', 'cancelled', 'delayed').optional(),
+    delay_minutes: Joi.number().integer().min(0).optional(),
+    driver_name: Joi.string().allow('', null).optional(),
+    driver_phone: Joi.string().pattern(/^[0-9]{7,15}$/).allow('', null).optional(),
+    conductor_name: Joi.string().allow('', null).optional(),
+    conductor_phone: Joi.string().pattern(/^[0-9]{7,15}$/).allow('', null).optional(),
+    notes: Joi.string().allow('', null).optional()
 });
 
 // ------------------- Booking Schemas -------------------

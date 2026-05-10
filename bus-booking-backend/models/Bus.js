@@ -129,10 +129,11 @@ class Bus {
     }
 
     static async delete(id) {
-        await pool.execute(
+        const [result] = await pool.execute(
             'UPDATE buses SET deleted_at = NOW() WHERE id = ?',
             [id]
         );
+        return result.affectedRows;
     }
 }
 

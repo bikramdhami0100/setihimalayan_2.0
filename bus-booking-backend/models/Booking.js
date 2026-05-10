@@ -5,7 +5,8 @@ class Booking {
     static async create(bookingData) {
         const {
             user_id, schedule_id, selected_seats, total_amount,
-            passenger_details, special_requests, seat_lock_expires_at
+            passenger_details, special_requests, seat_lock_expires_at,
+            boarding_point_id, dropping_point_id, boarding_time, dropping_time
         } = bookingData;
 
         const booking_reference = `${Date.now()}-${uuidv4().substring(0, 8).toUpperCase()}`;
@@ -14,13 +15,16 @@ class Booking {
             `INSERT INTO bookings (
                 user_id, schedule_id, booking_reference, selected_seats,
                 total_amount, passenger_details, special_requests,
-                seat_lock_expires_at, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment')`,
+                seat_lock_expires_at, status,
+                boarding_point_id, dropping_point_id, boarding_time, dropping_time
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment', ?, ?, ?, ?)`,
             [
                 user_id, schedule_id, booking_reference,
                 JSON.stringify(selected_seats), total_amount,
                 JSON.stringify(passenger_details), special_requests,
-                seat_lock_expires_at
+                seat_lock_expires_at,
+                boarding_point_id || null, dropping_point_id || null,
+                boarding_time || null, dropping_time || null
             ]
         );
         return { id: result.insertId, booking_reference };
@@ -29,11 +33,17 @@ class Booking {
     static async findById(id) {
         const [rows] = await pool.execute(
             `SELECT b.*, s.departure_time, s.arrival_time, s.base_price,
-                    r.origin, r.destination, bus.bus_number, bus.bus_type
+                    r.origin, r.destination, bus.bus_number, bus.bus_type,
+                    bp.point_name AS boarding_point_name,
+                    bp.landmark AS boarding_landmark,
+                    dp.point_name AS dropping_point_name,
+                    dp.landmark AS dropping_landmark
              FROM bookings b
              JOIN schedules s ON s.id = b.schedule_id
              JOIN routes r ON r.id = s.route_id
              JOIN buses bus ON bus.id = s.bus_id
+             LEFT JOIN route_points bp ON bp.id = b.boarding_point_id
+             LEFT JOIN route_points dp ON dp.id = b.dropping_point_id
              WHERE b.id = ? AND b.deleted_at IS NULL`,
             [id]
         );
@@ -47,11 +57,17 @@ class Booking {
     static async findByReference(ref) {
         const [rows] = await pool.execute(
             `SELECT b.*, s.departure_time, s.arrival_time, r.origin, r.destination,
-                    bus.bus_number, bus.bus_type
+                    bus.bus_number, bus.bus_type,
+                    bp.point_name AS boarding_point_name,
+                    bp.landmark AS boarding_landmark,
+                    dp.point_name AS dropping_point_name,
+                    dp.landmark AS dropping_landmark
              FROM bookings b
              JOIN schedules s ON s.id = b.schedule_id
              JOIN routes r ON r.id = s.route_id
              JOIN buses bus ON bus.id = s.bus_id
+             LEFT JOIN route_points bp ON bp.id = b.boarding_point_id
+             LEFT JOIN route_points dp ON dp.id = b.dropping_point_id
              WHERE b.booking_reference = ? AND b.deleted_at IS NULL`,
             [ref]
         );
@@ -116,10 +132,16 @@ static async cancelBooking(id, reason, refundAmount = null) {
         const [rows] = await pool.execute(
             `SELECT b.id, b.booking_reference, b.total_amount, b.status, b.created_at,
                     b.confirmed_at, b.selected_seats, b.passenger_details,
-                    s.departure_time, s.arrival_time, r.origin, r.destination
+                    b.boarding_point_id, b.dropping_point_id,
+                    b.boarding_time, b.dropping_time,
+                    s.departure_time, s.arrival_time, r.origin, r.destination,
+                    bp.point_name AS boarding_point_name,
+                    dp.point_name AS dropping_point_name
              FROM bookings b
              JOIN schedules s ON s.id = b.schedule_id
              JOIN routes r ON r.id = s.route_id
+             LEFT JOIN route_points bp ON bp.id = b.boarding_point_id
+             LEFT JOIN route_points dp ON dp.id = b.dropping_point_id
              WHERE b.user_id = ? AND b.deleted_at IS NULL
              ORDER BY b.created_at DESC
              LIMIT ? OFFSET ?`,
@@ -153,13 +175,19 @@ static async cancelBooking(id, reason, refundAmount = null) {
 
     const [rows] = await pool.execute(
         `SELECT b.id, b.booking_reference, b.total_amount, b.status, b.created_at,
-                b.confirmed_at, s.departure_time, r.origin, r.destination,
-                bus.bus_number, bus.bus_type, u.full_name AS user_name
+                b.confirmed_at, b.boarding_point_id, b.dropping_point_id,
+                b.boarding_time, b.dropping_time,
+                s.departure_time, r.origin, r.destination,
+                bus.bus_number, bus.bus_type, u.full_name AS user_name,
+                bp.point_name AS boarding_point_name,
+                dp.point_name AS dropping_point_name
          FROM bookings b
          JOIN schedules s ON s.id = b.schedule_id
          JOIN routes r ON r.id = s.route_id
          JOIN buses bus ON bus.id = s.bus_id
          JOIN users u ON u.id = b.user_id
+         LEFT JOIN route_points bp ON bp.id = b.boarding_point_id
+         LEFT JOIN route_points dp ON dp.id = b.dropping_point_id
          WHERE (b.booking_reference LIKE ? 
                 OR u.full_name LIKE ? 
                 OR r.origin LIKE ? 
