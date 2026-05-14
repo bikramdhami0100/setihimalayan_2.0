@@ -225,9 +225,8 @@ export const downloadTicket = async (req, res, next) => {
 // get all bookings (admin)
 export const getAllBookings = async (req, res, next) => {
     try {
-        const { page = 1, limit = 10, search } = req.query;
-        const offset = (page - 1) * limit;  
-        const { bookings, total } = await Booking.findAll({ page, limit, search });
+        const { page = 1, limit = 10, search, sortBy, sortOrder, booking_status, payment_status, travel_date, date_from, date_to, route, bus } = req.query;
+        const { bookings, total } = await Booking.findAll({ page, limit, search, sortBy, sortOrder, booking_status, payment_status, travel_date, date_from, date_to, route, bus });
         successResponse(res, 'Bookings retrieved', { 
             bookings,   
             pagination: {
@@ -241,6 +240,88 @@ export const getAllBookings = async (req, res, next) => {
         next(err);
     }
 }
+
+export const updateBooking = async (req, res, next) => {
+    try {
+        const bookingId = req.params.id;
+        const booking = await Booking.findById(bookingId);
+        if (!booking) return errorResponse(res, 'Booking not found', 404);
+
+        const updateData = req.body;
+        const allowedFields = ['schedule_id', 'fare', 'discount', 'total_amount', 'payment_method', 'payment_status', 'status', 'notes', 'boarding_point', 'dropping_point', 'seat_numbers', 'passenger_name', 'passenger_phone'];
+        
+        const cleanData = {};
+        for (const key of allowedFields) {
+            if (updateData[key] !== undefined) {
+                cleanData[key] = updateData[key];
+            }
+        }
+
+        if (Object.keys(cleanData).length === 0) {
+            return errorResponse(res, 'No valid fields to update', 400);
+        }
+
+        await Booking.update(bookingId, cleanData);
+        successResponse(res, 'Booking updated successfully');
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const deleteBooking = async (req, res, next) => {
+    try {
+        const bookingId = req.params.id;
+        const booking = await Booking.findById(bookingId);
+        if (!booking) return errorResponse(res, 'Booking not found', 404);
+        await Booking.delete(bookingId);
+        successResponse(res, 'Booking deleted successfully');
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const createAdminBooking = async (req, res, next) => {
+    try {
+        const {
+            user_id, schedule_id, seats, seat_numbers, fare, discount,
+            total_amount, payment_method, payment_status, status, notes,
+            boarding_point, dropping_point
+        } = req.body;
+
+        const schedule = await Schedule.findById(schedule_id);
+        if (!schedule) return errorResponse(res, 'Schedule not found', 400);
+
+        const parsedSeats = typeof seat_numbers === 'string' ? seat_numbers.split(',').map(s => s.trim()).filter(Boolean) : (Array.isArray(seat_numbers) ? seat_numbers : []);
+        const seatCount = parsedSeats.length || parseInt(seats) || 1;
+
+        const bookingData = {
+            user_id: user_id || req.user.id,
+            schedule_id,
+            selected_seats: parsedSeats,
+            total_amount: total_amount || fare || schedule.base_price,
+            passenger_details: [],
+            special_requests: notes || null,
+            seat_lock_expires_at: new Date(Date.now() + 5 * 60 * 1000),
+            status: status || 'pending_payment',
+            payment_method: payment_method || 'cash',
+            payment_status: payment_status || 'unpaid'
+        };
+
+        if (fare) bookingData.fare = fare;
+        if (discount) bookingData.discount = discount;
+        if (notes) bookingData.notes = notes;
+
+        const booking = await Booking.create(bookingData);
+
+        if (bookingData.status === 'confirmed' && bookingData.payment_status === 'paid') {
+            await Schedule.updateAvailableSeats(schedule_id, -seatCount);
+        }
+
+        successResponse(res, 'Booking created successfully', { booking }, 201);
+    } catch (err) {
+        next(err);
+    }
+};
 
 // Add this function to the existing bookingController.js
 

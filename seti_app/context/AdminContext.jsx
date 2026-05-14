@@ -62,7 +62,8 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
   try {
     const { page, limit } = getPagination(key);
     const search = getSearchQuery(key);
-    const res = await usersApi.getUsers({ page, limit, search });
+    const { sortBy, sortOrder } = getSort(key);
+    const res = await usersApi.getUsers({ page, limit, search, sortBy, sortOrder });
     setUsers(res.data.data.users || []);
     updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
   } catch (err) {
@@ -72,7 +73,7 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
     setKeyLoading(key, false);
     setKeyRefreshing(key, false);
   }
-}, [paginations.users, searchQueries.users]);
+}, [paginations.users, searchQueries.users, sortConfig.users]);
 
   const fetchBuses = useCallback(async (isRefreshing = false) => {
     const key = 'buses';
@@ -92,14 +93,15 @@ const fetchUsers = useCallback(async (isRefreshing = false) => {
     }
   }, [paginations.buses, searchQueries.buses, sortConfig.buses]);
 
-  const fetchBookings = useCallback(async (isRefreshing = false) => {
+  const fetchBookings = useCallback(async (isRefreshing = false, extraParams = {}) => {
     const key = 'bookings';
     isRefreshing ? setKeyRefreshing(key, true) : setKeyLoading(key, true);
     try {
       const { page, limit } = getPagination(key);
       const search = getSearchQuery(key);
       const { sortBy, sortOrder } = getSort(key);
-      const res = await bookingApi.getAllBookings({ page, limit, search, sortBy, sortOrder });
+      const params = { page, limit, search, sortBy, sortOrder, ...extraParams };
+      const res = await bookingApi.getAllBookings(params);
       setBookings(res.data.data.bookings || []);
       updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
     } catch (err) {

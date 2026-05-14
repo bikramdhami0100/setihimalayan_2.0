@@ -12,8 +12,7 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import {
-  createBooking, deleteBooking, updateBooking, getBookingById,
-  getAllBookings, downloadTicket, cancelBooking
+  deleteBooking, updateBooking, createBooking, getAllBookings, downloadTicket, cancelBooking
 } from "../../api/bookings";
 import { useAdminData } from "../../context/AdminContext";
 import PdfViewer from "../../components/PdfViewer";
@@ -121,7 +120,7 @@ const toPayload = (f) => ({
   user_id:        parseInt(f.user_id) || null,
   schedule_id:    parseInt(f.schedule_id) || null,
   seats:          parseInt(f.seats) || 1,
-  seat_numbers:   f.seat_numbers ? f.seat_numbers.split(",").map(s => s.trim()).filter(Boolean) : [],
+  seat_numbers:   f.seat_numbers ? f.seat_numbers.split(",").map(s => s.trim()).filter(Boolean).join(",") : "",
   boarding_point: f.boarding_point || null,
   dropping_point: f.dropping_point || null,
   fare:           parseFloat(f.fare) || null,
@@ -392,13 +391,13 @@ const StatusBadge = ({ status, config }) => {
   );
 };
 
-const BookingForm = ({ visible, editingBooking, form, setForm, saving, onSave, onClose, users, schedules }) => {
+const BookingForm = ({ visible, editingBooking, form, setForm, formErrors, clearFieldError, saving, onSave, onClose, users, schedules }) => {
   const userOptions = users.map(u => ({ label: `${u.full_name || u.name} (${u.email || u.phone || ""})`, value: u.id.toString() }));
   const scheduleOptions = schedules.map(s => ({
     label: `${s.bus_number || ""} \u00B7 ${s.origin || ""} \u2192 ${s.destination || ""} \u00B7 ${formatDateTime(s.departure_time)}`,
     value: s.id.toString(),
   }));
-  const clr = (f) => (v) => setForm({ ...form, [f]: v });
+  const clr = (f) => (v) => { if (clearFieldError) clearFieldError(f); setForm({ ...form, [f]: v }); };
   return (
     <Portal>
       <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.modalContent}>
@@ -435,10 +434,10 @@ const BookingForm = ({ visible, editingBooking, form, setForm, saving, onSave, o
               </View>
               <SectionLabel>Fare Details</SectionLabel>
               <View style={styles.formRow}>
-                <View style={styles.formRowItem}><Field label="Fare Amount" value={form.fare} onChangeText={clr("fare")} keyboardType="numeric" /></View>
+                <View style={styles.formRowItem}><Field label="Fare Amount" value={form.fare} onChangeText={clr("fare")} keyboardType="numeric" error={formErrors?.fare} /></View>
                 <View style={styles.formRowItem}><Field label="Discount" value={form.discount} onChangeText={clr("discount")} keyboardType="numeric" /></View>
               </View>
-              <Field label="Total Amount" value={form.total_amount} onChangeText={clr("total_amount")} keyboardType="numeric" />
+              <Field label="Total Amount" value={form.total_amount} onChangeText={clr("total_amount")} keyboardType="numeric" error={formErrors?.total_amount} />
               <SectionLabel>Payment</SectionLabel>
               <DropdownSelect label="Payment Method" value={form.payment_method}
                 options={PAYMENT_METHODS.map(m => ({ label: m.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()), value: m }))}
@@ -626,22 +625,19 @@ const FilterBar = ({ filters, setFilters, buses, routes }) => {
 
 export default function AdminBookings() {
   const {
-    users, schedules, buses, routes,
+    bookings, users, schedules, buses, routes,
     loading: loadingStates, refreshing: refreshingStates,
     getPagination, updatePagination,
     getSearchQuery, updateSearchQuery,
     getSort, updateSort,
+    fetchBookings,
   } = useAdminData();
 
+  const loading = loadingStates.bookings;
+  const refreshing = refreshingStates.bookings;
   const { page, limit, total: totalItems } = getPagination("bookings");
   const searchQuery = getSearchQuery("bookings");
   const { sortBy, sortOrder } = getSort("bookings");
-
-  const [localBookings, setLocalBookings] = useState([]);
-  const [localTotal, setLocalTotal] = useState(0);
-  const [localLoading, setLocalLoading] = useState(false);
-  const [localRefreshing, setLocalRefreshing] = useState(false);
-  const [fetchError, setFetchError] = useState(null);
 
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [modalVisible, setModalVisible] = useState(false);
@@ -660,6 +656,7 @@ export default function AdminBookings() {
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [formErrors, setFormErrors] = useState({});
   const [filters, setFilters] = useState({
     booking_status: "", payment_status: "", travel_date: "",
     date_from: "", date_to: "", route: "", bus: "",
@@ -667,39 +664,17 @@ export default function AdminBookings() {
   const [showFilters, setShowFilters] = useState(false);
   const debounceRef = useRef(null);
 
-  const fetchData = useCallback(async (isRefresh = false) => {
-    const key = "bookings";
-    isRefresh ? setLocalRefreshing(true) : setLocalLoading(true);
-    setFetchError(null);
-    try {
-      const params = {
-        page, limit,
-        search: searchQuery,
-        sortBy, sortOrder,
-      };
-      if (filters.booking_status) params.booking_status = filters.booking_status;
-      if (filters.payment_status) params.payment_status = filters.payment_status;
-      if (filters.travel_date) params.travel_date = filters.travel_date;
-      if (filters.date_from) params.date_from = filters.date_from;
-      if (filters.date_to) params.date_to = filters.date_to;
-      if (filters.route) params.route = filters.route;
-      if (filters.bus) params.bus = filters.bus;
-      const res = await getAllBookings(params);
-      const data = res.data.data;
-      setLocalBookings(data.bookings || []);
-      const total = data.pagination?.total || 0;
-      setLocalTotal(total);
-      updatePagination(key, { total, page: data.pagination?.page || page });
-    } catch (err) {
-      console.error("Failed to fetch bookings", err);
-      setFetchError(err.message || "Failed to load bookings");
-    } finally {
-      setLocalLoading(false);
-      setLocalRefreshing(false);
-    }
-  }, [page, limit, searchQuery, sortBy, sortOrder, filters, updatePagination]);
-
-  useEffect(() => { fetchData(); }, [page,limit,searchQuery,sortBy,sortOrder,filters,updatePagination]);
+  useEffect(() => {
+    const activeFilters = {};
+    if (filters.booking_status) activeFilters.booking_status = filters.booking_status;
+    if (filters.payment_status) activeFilters.payment_status = filters.payment_status;
+    if (filters.travel_date) activeFilters.travel_date = filters.travel_date;
+    if (filters.date_from) activeFilters.date_from = filters.date_from;
+    if (filters.date_to) activeFilters.date_to = filters.date_to;
+    if (filters.route) activeFilters.route = filters.route;
+    if (filters.bus) activeFilters.bus = filters.bus;
+    fetchBookings(false, activeFilters);
+  }, [page, limit, searchQuery, sortBy, sortOrder, filters]);
 
   const commitSearch = useCallback((text) => updateSearchQuery("bookings", text), [updateSearchQuery]);
 
@@ -711,8 +686,9 @@ export default function AdminBookings() {
 
   const handleSort = (column) => {
     if (!column.sortable) return;
-    if (sortBy === column.key) {
-      updateSort("bookings", column.key, sortOrder === "ASC" ? "DESC" : "ASC");
+    const currentSort = getSort("bookings");
+    if (currentSort.sortBy === column.key) {
+      updateSort("bookings", column.key, currentSort.sortOrder === "ASC" ? "DESC" : "ASC");
     } else {
       updateSort("bookings", column.key, "ASC");
     }
@@ -723,34 +699,43 @@ export default function AdminBookings() {
     setPageSizeModalVisible(false);
   };
 
-  const openCreate = () => { setEditingBooking(null); setForm({ ...EMPTY_FORM }); setModalVisible(true); };
-  const openEdit = (item) => { setEditingBooking(item); setForm(itemToForm(item)); setModalVisible(true); };
+  const openCreate = () => { setEditingBooking(null); setForm({ ...EMPTY_FORM }); setFormErrors({}); setModalVisible(true); };
+  const openEdit = (item) => { setEditingBooking(item); setForm(itemToForm(item)); setFormErrors({}); setModalVisible(true); };
   const openView = (item) => { setViewingBooking(item); setViewModalVisible(true); };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!form.schedule_id) errors.schedule_id = "Schedule is required";
+    if (!form.total_amount && !form.fare) errors.total_amount = "Fare or total amount is required";
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearFieldError = (field) => {
+    if (formErrors[field]) setFormErrors((prev) => { const n = { ...prev }; delete n[field]; return n; });
+  };
+
   const handleSave = async () => {
-    if (!form.schedule_id) {
-      return Alert.alert("Required", "Schedule is required.");
-    }
+    if (!validateForm()) return;
     setSaving(true);
     try {
       if (editingBooking) {
         await updateBooking(editingBooking.id, toPayload(form));
-        Alert.alert("Success", "Booking updated successfully!", [
-          { text: "OK", onPress: () => fetchData(true) },
-        ]);
       } else {
         await createBooking(toPayload(form));
-        Alert.alert("Success", "Booking created successfully!", [
-          { text: "OK", onPress: () => fetchData(true) },
-        ]);
       }
       setModalVisible(false);
+      setFormErrors({});
+      Alert.alert("Success", editingBooking ? "Booking updated successfully!" : "Booking created successfully!");
+      await fetchBookings(true);
     } catch (err) {
-      const msg = err?.response?.data?.message || err.message || "Could not save booking.";
+      const data = err?.response?.data;
+      const msg = data?.message || err?.message || "Could not save booking.";
+      let fieldErrors = data?.fields;
+      if (fieldErrors && typeof fieldErrors === 'object') setFormErrors(fieldErrors);
       Alert.alert("Error", msg);
     } finally {
       setSaving(false);
-      await fetchData(true);
     }
   };
 
@@ -767,16 +752,16 @@ export default function AdminBookings() {
     setDeleteConfirmVisible(false);
     try {
       await deleteBooking(id);
-      Alert.alert("Success", "Booking deleted successfully.", [
-        { text: "OK", onPress: () => fetchData(true) },
-      ]);
-    } catch (err) {
-      const msg = err?.response?.data?.message || err.message || "Could not delete booking.";
-      Alert.alert("Delete Failed", msg);
+      Alert.alert("Success", "Booking deleted successfully.");
+    } catch (error) {
+      const status = error.response?.status;
+      const data = error.response?.data;
+      const msg = data?.message || error.message || "Could not delete booking.";
+      Alert.alert("Delete Failed", `Status: ${status || "—"}\n${msg}`);
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
-      await fetchData(true);
+      await fetchBookings(true);
     }
   };
 
@@ -792,9 +777,8 @@ export default function AdminBookings() {
           onPress: async () => {
             try {
               await cancelBooking(item.booking_reference, "Cancelled by admin");
-              Alert.alert("Success", "Booking cancelled.", [
-                { text: "OK", onPress: () => fetchData(true) },
-              ]);
+              Alert.alert("Success", "Booking cancelled.");
+              await fetchBookings(true);
             } catch (err) {
               Alert.alert("Error", err?.response?.data?.message || "Could not cancel booking.");
             }
@@ -832,7 +816,7 @@ export default function AdminBookings() {
     setExportModalVisible(false);
     setExporting(true);
     try {
-      const exportData = exportRange === "all" ? (await getAllBookings({ limit: 10000 })).data.data?.bookings || localBookings : localBookings;
+      const exportData = exportRange === "all" ? (await getAllBookings({ limit: 10000 })).data.data?.bookings || bookings : bookings;
       if (type === "csv") await exportCSV(exportData);
       if (type === "pdf") await exportPDF(exportData);
       if (type === "xls") await exportXLS(exportData);
@@ -843,9 +827,9 @@ export default function AdminBookings() {
     }
   };
 
-  const totalPages = Math.ceil(localTotal / limit) || 1;
-  const startEntry = localTotal === 0 ? 0 : (page - 1) * limit + 1;
-  const endEntry = Math.min(page * limit, localTotal);
+  const totalPages = Math.ceil(totalItems / limit) || 1;
+  const startEntry = totalItems === 0 ? 0 : (page - 1) * limit + 1;
+  const endEntry = Math.min(page * limit, totalItems);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -858,10 +842,11 @@ export default function AdminBookings() {
   };
 
   const SortIndicator = ({ column }) => {
-    if (sortBy !== column.key) return <Ionicons name="swap-vertical-outline" size={12} color="#94a3b8" style={{ marginLeft: 3 }} />;
+    const current = getSort("bookings");
+    if (current.sortBy !== column.key) return <Ionicons name="swap-vertical-outline" size={12} color="#94a3b8" style={{ marginLeft: 3 }} />;
     return (
       <Ionicons
-        name={sortOrder === "ASC" ? "caret-up" : "caret-down"}
+        name={current.sortOrder === "ASC" ? "caret-up" : "caret-down"}
         size={12} color="#fff" style={{ marginLeft: 3 }}
       />
     );
@@ -946,8 +931,7 @@ export default function AdminBookings() {
     </Animated.View>
   );
 
-  const loading = localLoading || loadingStates.bookings;
-  const refreshing = localRefreshing || refreshingStates.bookings;
+  const displayBookings = bookings || [];
 
   return (
     <SafeAreaView style={styles.screen}>
@@ -957,14 +941,14 @@ export default function AdminBookings() {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.headerTitle}>Booking Manager</Text>
-            <Text style={styles.headerCount}>{localTotal} booking{localTotal !== 1 ? "s" : ""} found</Text>
+            <Text style={styles.headerCount}>{totalItems} booking{totalItems !== 1 ? "s" : ""} found</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => setShowFilters((s) => !s)} style={styles.exportBtn}>
               <Ionicons name="funnel-outline" size={18} color={showFilters ? "#fff" : "rgba(255,255,255,0.6)"} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setExportModalVisible(true)}
-              disabled={exporting || localBookings.length === 0} style={styles.exportBtn}>
+              disabled={exporting || displayBookings.length === 0} style={styles.exportBtn}>
               {exporting ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="share-outline" size={20} color="#fff" />}
             </TouchableOpacity>
             <TouchableOpacity onPress={openCreate} style={styles.addBtn}>
@@ -1003,7 +987,7 @@ export default function AdminBookings() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => fetchData(true)}
+              onRefresh={() => fetchBookings(true)}
               tintColor="#1e3a8a"
               colors={["#1e3a8a"]}
             />
@@ -1011,10 +995,10 @@ export default function AdminBookings() {
         >
           <View style={styles.statsBar}>
             {[
-              { label: "Total", val: localTotal, color: "#1E3A8A" },
-              { label: "Confirmed", val: localBookings.filter(b => b.status === "confirmed").length, color: "#16A34A" },
-              { label: "Pending", val: localBookings.filter(b => b.status === "pending_payment").length, color: "#CA8A04" },
-              { label: "Cancelled", val: localBookings.filter(b => b.status === "cancelled").length, color: "#DC2626" },
+              { label: "Total", val: totalItems, color: "#1E3A8A" },
+              { label: "Confirmed", val: displayBookings.filter(b => b.status === "confirmed").length, color: "#16A34A" },
+              { label: "Pending", val: displayBookings.filter(b => b.status === "pending_payment").length, color: "#CA8A04" },
+              { label: "Cancelled", val: displayBookings.filter(b => b.status === "cancelled").length, color: "#DC2626" },
             ].map(({ label, val, color }, i, arr) => (
               <View key={label} style={[styles.statBox, i < arr.length - 1 && styles.statBoxBorder]}>
                 <Text style={[styles.statValue, { color }]}>{val}</Text>
@@ -1023,21 +1007,11 @@ export default function AdminBookings() {
             ))}
           </View>
 
-          {fetchError && (
-            <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle-outline" size={16} color="#DC2626" />
-              <Text style={styles.errorBannerText}>{fetchError}</Text>
-              <TouchableOpacity onPress={() => fetchData(true)}>
-                <Ionicons name="refresh-outline" size={18} color="#DC2626" />
-              </TouchableOpacity>
-            </View>
-          )}
-
           <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.tableScroll} nestedScrollEnabled={true}>
             <View style={styles.tableContainer}>
               {renderTableHeader()}
-              {localBookings.length > 0 ? (
-                localBookings.map((item, index) => renderTableRow(item, index))
+              {displayBookings.length > 0 ? (
+                displayBookings.map((item, index) => renderTableRow(item, index))
               ) : (
                 <View style={styles.emptyTable}>
                   <MaterialCommunityIcons name="ticket-outline" size={48} color="#e2e8f0" />
@@ -1055,14 +1029,14 @@ export default function AdminBookings() {
             </View>
           </ScrollView>
 
-          {localBookings.length > 0 && (
+          {displayBookings.length > 0 && (
             <View style={styles.footerContainer}>
               <View style={styles.footerRow}>
                 <TouchableOpacity onPress={() => setPageSizeModalVisible(true)} style={styles.pageSizeBtn}>
                   <Text style={styles.pageSizeText}>{limit} rows</Text>
                   <Ionicons name="chevron-down" size={12} color="#64748b" />
                 </TouchableOpacity>
-                <Text style={styles.entriesInfo}>Showing {startEntry} to {endEntry} of {localTotal} entries</Text>
+                <Text style={styles.entriesInfo}>Showing {startEntry} to {endEntry} of {totalItems} entries</Text>
                 <View style={styles.pagination}>
                   <TouchableOpacity disabled={page <= 1}
                     onPress={() => updatePagination("bookings", { page: page - 1 })}
@@ -1089,7 +1063,8 @@ export default function AdminBookings() {
 
       <BookingForm
         visible={modalVisible} editingBooking={editingBooking} form={form}
-        setForm={setForm} saving={saving} onSave={handleSave}
+        setForm={setForm} formErrors={formErrors} clearFieldError={clearFieldError}
+        saving={saving} onSave={handleSave}
         onClose={() => setModalVisible(false)} users={users} schedules={schedules}
       />
 

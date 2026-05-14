@@ -3,12 +3,15 @@ import { hashPassword } from '../utils/bcryptHelper.js';
 
 class User {
     static async create(userData) {
-        const { email, phone, full_name, password, role = 'passenger' } = userData;
+        const { email, phone, full_name, password, role = 'passenger', status = 'active',
+                date_of_birth, address, city, state, country, postal_code, profile_image } = userData;
         const hashedPassword = await hashPassword(password);
         const [result] = await pool.execute(
-            `INSERT INTO users (email, phone, full_name, password_hash, role) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [email, phone, full_name, hashedPassword, role]
+            `INSERT INTO users (email, phone, full_name, password_hash, role, status,
+                                date_of_birth, address, city, state, country, postal_code, profile_image) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [email, phone || null, full_name, hashedPassword, role, status,
+             date_of_birth || null, address || null, city || null, state || null, country || null, postal_code || null, profile_image || null]
         );
         return result.insertId;
     }
@@ -34,7 +37,7 @@ class User {
             `SELECT id, email, phone, full_name, role, status, is_email_verified, 
                     profile_image, date_of_birth, address, city, state, country, postal_code,
                     notification_preferences, language, refresh_token_hash,
-                    created_at, last_login_at 
+                    created_at, updated_at, last_login_at 
              FROM users WHERE id = ? AND deleted_at IS NULL`,
             [id]
         );
@@ -52,6 +55,29 @@ class User {
         await pool.execute(
             'UPDATE users SET refresh_token_hash = ? WHERE id = ?',
             [refreshTokenHash, userId]
+        );
+    }
+
+    static async update(userId, updateData) {
+        const { password, ...rest } = updateData;
+        const fields = [];
+        const values = [];
+        for (const [key, value] of Object.entries(rest)) {
+            if (value !== undefined) {
+                fields.push(`${key} = ?`);
+                values.push(value);
+            }
+        }
+        if (password && password.trim()) {
+            const hashedPassword = await hashPassword(password);
+            fields.push('password_hash = ?');
+            values.push(hashedPassword);
+        }
+        if (fields.length === 0) return;
+        values.push(userId);
+        await pool.execute(
+            `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`,
+            values
         );
     }
 
@@ -101,13 +127,6 @@ class User {
 
 static async getAll(filters = {}) {
     let baseQuery = 'FROM users WHERE deleted_at IS NULL';
-    let dataQuery = `
-        SELECT id, email, phone, full_name, role, status, 
-        address, city, state, country, postal_code,date_of_birth, profile_image,
-        last_login_at,created_at 
-        ${baseQuery}
-    `;
-    let countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
 
     const values = [];
     const countValues = [];
@@ -132,26 +151,29 @@ static async getAll(filters = {}) {
         countValues.push(searchValue, searchValue, searchValue);
     }
 
-    // Rebuild queries after filters applied
-    dataQuery = `
+    // Sorting - allowed columns to prevent SQL injection
+    const allowedSortColumns = ['created_at', 'updated_at', 'full_name', 'email', 'role', 'status', 'phone', 'last_login_at'];
+    const sortBy = filters.sortBy && allowedSortColumns.includes(filters.sortBy) ? filters.sortBy : 'created_at';
+    const sortOrder = filters.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    const dataQuery = `
         SELECT id, email, phone, full_name, role, status, profile_image, date_of_birth, address, city, state, country, postal_code,
-        last_login_at,
-        created_at 
+        last_login_at, created_at 
         ${baseQuery}
-        ORDER BY created_at DESC
+        ORDER BY ${sortBy} ${sortOrder}
     `;
-    countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
+    const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
 
     // Pagination
     let page = filters.page || 1;
     let limit = filters.limit || 10;
     const offset = (page - 1) * limit;
 
-    dataQuery += ' LIMIT ? OFFSET ?';
-    values.push(limit, offset);
+    const paginatedQuery = dataQuery + ' LIMIT ? OFFSET ?';
+    const fullValues = [...values, limit, offset];
 
     const [[{ total }]] = await pool.execute(countQuery, countValues);
-    const [rows] = await pool.execute(dataQuery, values);
+    const [rows] = await pool.execute(paginatedQuery, fullValues);
 
     return { rows, total, page, limit };
 }

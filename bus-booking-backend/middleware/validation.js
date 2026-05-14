@@ -27,6 +27,37 @@ export const validate = (schema) => {
     };
 };
 
+// ------------------- User Schemas -------------------
+export const createUserSchema = Joi.object({
+    email: Joi.string().email().required(),
+    phone: Joi.string().pattern(/^[0-9]{10}$/).allow('', null).optional(),
+    full_name: Joi.string().min(2).max(100).required(),
+    password: Joi.string().min(6).required(),
+    role: Joi.string().valid('passenger', 'admin', 'super_admin').default('passenger'),
+    status: Joi.string().valid('active', 'inactive', 'suspended').default('active'),
+    date_of_birth: Joi.date().allow(null).optional(),
+    address: Joi.string().allow('', null).optional(),
+    city: Joi.string().allow('', null).optional(),
+    state: Joi.string().allow('', null).optional(),
+    country: Joi.string().allow('', null).optional(),
+    postal_code: Joi.string().allow('', null).optional()
+});
+
+export const updateUserSchema = Joi.object({
+    email: Joi.string().email().optional(),
+    phone: Joi.string().pattern(/^[0-9]{10}$/).allow('', null).optional(),
+    full_name: Joi.string().min(2).max(100).optional(),
+    password: Joi.string().min(6).allow('').optional(),
+    role: Joi.string().valid('passenger', 'admin', 'super_admin').optional(),
+    status: Joi.string().valid('active', 'inactive', 'suspended').optional(),
+    date_of_birth: Joi.date().allow(null).optional(),
+    address: Joi.string().allow('', null).optional(),
+    city: Joi.string().allow('', null).optional(),
+    state: Joi.string().allow('', null).optional(),
+    country: Joi.string().allow('', null).optional(),
+    postal_code: Joi.string().allow('', null).optional()
+});
+
 // ------------------- Auth Schemas -------------------
 export const registerSchema = Joi.object({
     email: Joi.string().email().required(),
@@ -206,6 +237,40 @@ export const bookingSchema = Joi.object({
 
 export const cancelBookingSchema = Joi.object({
     cancellation_reason: Joi.string().required()
+});
+
+// Admin booking CRUD schemas
+export const adminBookingCreateSchema = Joi.object({
+    user_id: Joi.number().integer().optional().allow(null),
+    schedule_id: Joi.number().integer().required(),
+    seats: Joi.number().integer().min(1).optional(),
+    seat_numbers: Joi.array().items(Joi.string()).optional(),
+    fare: Joi.number().positive().optional().allow(null),
+    discount: Joi.number().min(0).optional().allow(null),
+    total_amount: Joi.number().positive().optional().allow(null),
+    payment_method: Joi.string().valid('cash', 'card', 'online', 'bank_transfer', 'other').optional(),
+    payment_status: Joi.string().valid('unpaid', 'paid', 'refunded', 'partial_refund', 'pending').optional(),
+    status: Joi.string().valid('pending_payment', 'confirmed', 'cancelled', 'expired', 'refunded').optional(),
+    notes: Joi.string().allow('', null).optional(),
+    boarding_point: Joi.string().allow('', null).optional(),
+    dropping_point: Joi.string().allow('', null).optional()
+});
+
+export const adminBookingUpdateSchema = Joi.object({
+    schedule_id: Joi.number().integer().optional(),
+    seats: Joi.number().integer().min(1).optional(),
+    seat_numbers: Joi.array().items(Joi.string()).optional(),
+    fare: Joi.number().positive().optional().allow(null),
+    discount: Joi.number().min(0).optional().allow(null),
+    total_amount: Joi.number().positive().optional().allow(null),
+    payment_method: Joi.string().valid('cash', 'card', 'online', 'bank_transfer', 'other').optional(),
+    payment_status: Joi.string().valid('unpaid', 'paid', 'refunded', 'partial_refund', 'pending').optional(),
+    status: Joi.string().valid('pending_payment', 'confirmed', 'cancelled', 'expired', 'refunded').optional(),
+    notes: Joi.string().allow('', null).optional(),
+    boarding_point: Joi.string().allow('', null).optional(),
+    dropping_point: Joi.string().allow('', null).optional(),
+    passenger_name: Joi.string().allow('', null).optional(),
+    passenger_phone: Joi.string().allow('', null).optional()
 });
 
 // ------------------- Payment Schemas -------------------
