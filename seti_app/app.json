@@ -27,7 +27,6 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "usesClearTextTraffic": true,
       "intentFilters": [
         {
@@ -53,8 +52,14 @@
               "pathPrefix": "/payment"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
+      ],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -80,6 +85,11 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "533af3bb-ad7a-45d7-b128-1b0c70aea468"
+      }
+    }
   }
 }
