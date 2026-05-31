@@ -133,7 +133,7 @@ const fetchRoutes = useCallback(async (isRefreshing = false) => {
     const key = 'dashboard';
     setKeyLoading(key, true);
     try {
-      const res = await reportApi.getUtilizationReport();
+      const res = await reportApi.getAdminDashboard();
       setDashboard(res.data.data);
     } catch (err) {
       console.error("Failed to fetch dashboard data", err);
@@ -159,17 +159,19 @@ const fetchSchedules = useCallback(async (isRefreshing = false) => {
     setKeyRefreshing(key, false);
   }
 }, [paginations.schedules, searchQueries.schedules, sortConfig.schedules]);
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, user } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !user) return;
+    const isAdmin = user.role === 'admin' || user.role === 'super_admin';
+    if (!isAdmin) return;
     fetchDashboard();
     fetchBuses();
     fetchBookings();
     fetchRoutes();
     fetchSchedules();
     fetchUsers();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
   // ── Combined Context Object
   const value = {
     // Data

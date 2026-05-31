@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head><title>Resize Icon</title></head>
+<body style="text-align:center;font-family:sans-serif;padding:20px">
+<h2>Drop your logo.png to add padding for Android icon</h2>
+<p>The icon is too zoomed because Android crops it to a circle. This adds 30% padding.</p>
+<input type="file" id="fileInput" accept="image/png" />
+<br/><br/>
+<canvas id="canvas" style="border:1px solid #ccc;display:none;max-width:300px"></canvas>
+<br/>
+<a id="downloadLink" style="display:none;margin-top:10px;display:inline-block;padding:10px 20px;background:#1d3557;color:white;text-decoration:none;border-radius:5px">Download Resized Icon</a>
+<p id="instructions" style="display:none;margin-top:10px;color:#1d3557;font-weight:bold">
+After download, copy the file to assets/adaptive-icon.png<br/>
+Then run: <code>cd D:\backupfile\setihimalayan_2.0\seti_app\android && .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon</code>
+</p>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const downloadLink = document.getElementById('downloadLink');
+const instructions = document.getElementById('instructions');
+
+fileInput.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const img = new Image();
+  img.onload = function() {
+    const paddingPercent = 0.30;
+    const size = Math.max(img.width, img.height);
+    const paddedSize = Math.round(size / (1 - paddingPercent * 2));
+    
+    canvas.width = paddedSize;
+    canvas.height = paddedSize;
+    
+    ctx.fillStyle = 'rgba(0,0,0,0)';
+    ctx.clearRect(0, 0, paddedSize, paddedSize);
+    
+    const offset = Math.round(paddedSize * paddingPercent);
+    ctx.drawImage(img, offset, offset, paddedSize - offset * 2, paddedSize - offset * 2);
+    
+    canvas.style.display = 'block';
+    
+    downloadLink.style.display = 'inline-block';
+    downloadLink.onclick = function() {
+      const link = document.createElement('a');
+      link.download = 'adaptive-icon.png';
+      link.href = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');
+      link.click();
+      instructions.style.display = 'block';
+    };
+  };
+  img.src = URL.createObjectURL(file);
+});
+</script>
+</body>
+</html>

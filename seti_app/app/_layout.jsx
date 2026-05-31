@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
-import { Buffer as BufferPolyfill } from 'buffer';
+import { useEffect, useState } from 'react';
 import { Stack } from "expo-router";
+import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider } from "../context/AuthContext";
 import { BookingProvider } from "../context/BookingContext";
 import { UIProvider } from "../context/UIContext";
@@ -10,16 +11,28 @@ import { PaperProvider } from 'react-native-paper';
 import { LogBox } from 'react-native';
 import { theme } from '../utils/theme';
 import { CustomerProvider } from '../context/CustomerContext';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+
+SplashScreen.preventAutoHideAsync();
 
 // Suppress LogBox warnings for unhandled 401 promise rejections
 LogBox.ignoreLogs(['Request failed with status code 401']);
 
-if (typeof global.Buffer === 'undefined') {
-  global.Buffer = BufferPolyfill;
-}
-
 export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      await SplashScreen.hideAsync();
+      setReady(true);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!ready) return null;
+
   return (
+    <ErrorBoundary>
     <PaperProvider theme={theme}>
       <UIProvider>
         <AuthProvider>
@@ -38,5 +51,6 @@ export default function RootLayout() {
         </AuthProvider>
       </UIProvider>
     </PaperProvider>
+    </ErrorBoundary>
   );
 }

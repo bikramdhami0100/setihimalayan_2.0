@@ -7,9 +7,7 @@ export const getProfile = () => api.get('/auth/profile');
 export const updateProfile = (data) => api.put('/auth/profile', data);
 export const changePassword = (data) => api.post('/auth/change-password', data);
 export const logout = () => api.post('/auth/logout');
-export const uploadProfileImage = (formData) => api.post('/auth/upload-profile-image', formData, {
-  headers: { 'Content-Type': 'multipart/form-data' },
-});
+export const uploadProfileImage = (formData) => api.post('/auth/upload-profile-image', formData);
 export const getUsers = () => api.get('/users');
 export const updateUserRole = (id, role) => api.put(`/users/${id}/role`, { role });
 export const deleteUser = (id) => api.delete(`/users/${id}`);

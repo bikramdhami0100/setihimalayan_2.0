@@ -23,8 +23,18 @@ export const AuthProvider = ({ children }) => {
     const initAuth = async () => {
       setIsLoading(true);
       try {
-        const storedUser = await getStoredUser();
-        const token = await getAccessToken();
+      // Retry storage access up to 5 times with 500ms delay
+      let storedUser, token;
+      for (let i = 0; i < 5; i++) {
+        try {
+          storedUser = await getStoredUser();
+          token = await getAccessToken();
+          break;
+        } catch (err) {
+          if (i === 4) throw err;
+          await new Promise(r => setTimeout(r, 500));
+        }
+      }
         
         if (token) {
           setAuthToken(token);

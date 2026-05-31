@@ -3,6 +3,7 @@ import { View, ScrollView, StyleSheet, Dimensions, Modal, TextInput, Alert, Touc
 import { Text, ActivityIndicator } from "react-native-paper";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { Image } from "expo-image";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { AuthContext } from "../../../context/AuthContext";
 import * as authApi from "../../../api/auth";
@@ -19,6 +20,7 @@ export default function ProfileScreen() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
   const [editModal, setEditModal] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [form, setForm] = useState({});
 
   useEffect(() => { fetchProfile(); }, []);
@@ -103,6 +105,7 @@ export default function ProfileScreen() {
         const profileRes = await authApi.getProfile();
         const userData = profileRes.data.data.user;
         setProfile(userData);
+        setImgError(false);
         updateLocalUser(userData);
         Alert.alert("Success", "Profile photo updated!");
       }
@@ -169,7 +172,7 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1e3a8a" />
       <View style={styles.topCircle} />
-
+      <Text>{profile?.profile_image}</Text>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeInUp.duration(800).delay(100)} style={styles.profileCard}>
           <View style={styles.profileTop}>
@@ -178,8 +181,8 @@ export default function ProfileScreen() {
                 <View style={[styles.avatar, styles.avatarUploading]}>
                   <ActivityIndicator size="large" color="#fff" />
                 </View>
-              ) : profile?.profile_image ? (
-                <Animated.Image source={{ uri: getImageUrl(profile.profile_image) }} style={styles.avatarImage} />
+              ) : profile?.profile_image && !imgError ? (
+                <Image source={getImageUrl(profile.profile_image)} style={styles.avatarImage} contentFit="cover" onError={() => setImgError(true)} />
               ) : (
                 <View style={styles.avatar}>
                   <Text style={styles.avatarLetter}>{initial}</Text>

@@ -29,6 +29,9 @@ api.interceptors.request.use(
     if (_accessToken) {
       config.headers.Authorization = `Bearer ${_accessToken}`;
     }
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     return config;
   },
   (error) => Promise.reject(error)
