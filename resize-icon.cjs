@@ -19,7 +19,7 @@ async function resize() {
       .resize(contentSize, contentSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .toBuffer();
 
-    const padded = await sharp({
+    await sharp({
       create: { width: paddedSize, height: paddedSize, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
     })
       .composite([{ input: buffer, top: Math.round(baseSize * paddingFraction), left: Math.round(baseSize * paddingFraction) }])
@@ -35,8 +35,12 @@ async function resize() {
   // icon.png: standard 10% padding for non-adaptive app icon
   await createPadded('icon.png', 'Standard App Icon', 0.10);
 
-  // splash-icon.png: 5% padding for splash screen
-  await createPadded('splash-icon.png', 'Splash Icon', 0.05);
+  // splash-icon.png: no padding, larger size for full-screen display
+  console.log('Splash Icon: splash-icon.png (1284x1284, no padding)');
+  await sharp(logoPath)
+    .resize(1284, 1284, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+    .png()
+    .toFile(path.join(assetsDir, 'splash-icon.png'));
 
   console.log('\nDone! Icons resized with padding.');
 }

@@ -23,7 +23,11 @@ async function run() {
 
   await createPadded('icon.png', 0.10);
   await createPadded('adaptive-icon.png', 0.17);
-  await createPadded('splash-icon.png', 0.05);
+  console.log('Creating splash-icon.png at 1284x1284, no padding');
+  await sharp(logoPath)
+    .resize(1284, 1284, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+    .png()
+    .toFile(path.join(assets, 'splash-icon.png'));
 
   // Delete old mipmap icons
   const mipmapDirs = fs.readdirSync(res).filter(d => d.startsWith('mipmap-'));
