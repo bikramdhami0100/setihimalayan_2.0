@@ -865,3 +865,6 @@
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-06-02 18:35:43"}
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-06-02 18:36:43"}
 {"level":"error","message":"Cleanup error: PROCEDURE bus_booking_system.CleanupExpiredLocks does not exist","service":"bus-booking-api","timestamp":"2026-06-02 18:37:43"}
+{"level":"error","message":"Cleanup error: connect ENOENT /cloudsql/paid-pro-497812:europe-west1:free-trial-first-project","service":"bus-booking-api","timestamp":"2026-06-02 22:05:15"}
+{"level":"error","message":"Cleanup error: connect ENOENT /cloudsql/paid-pro-497812:europe-west1:free-trial-first-project","service":"bus-booking-api","timestamp":"2026-06-02 22:05:47"}
+{"level":"error","message":"Cleanup error: connect ENOENT /cloudsql/paid-pro-497812:europe-west1:free-trial-first-project","service":"bus-booking-api","timestamp":"2026-06-02 22:06:47"}

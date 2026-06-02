@@ -1,38 +1,62 @@
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from './constants';
 
-/**
- * Save a string value securely
- */
-export const setItem = async (key, value) => {
+let useFallback = false;
+
+const secureSet = async (key, value) => {
   try {
     await SecureStore.setItemAsync(key, value);
+    return true;
   } catch (error) {
-    console.error(`Error saving ${key}:`, error);
+    console.warn(`SecureStore failed for ${key}, falling back to AsyncStorage:`, error.message);
+    return false;
   }
 };
 
-/**
- * Retrieve a string value securely
- */
-export const getItem = async (key) => {
+const secureGet = async (key) => {
   try {
     return await SecureStore.getItemAsync(key);
   } catch (error) {
-    console.error(`Error retrieving ${key}:`, error);
+    console.warn(`SecureStore get failed for ${key}:`, error.message);
     return null;
   }
 };
 
-/**
- * Delete an item securely
- */
-export const deleteItem = async (key) => {
+const secureDelete = async (key) => {
   try {
     await SecureStore.deleteItemAsync(key);
   } catch (error) {
-    console.error(`Error deleting ${key}:`, error);
+    console.warn(`SecureStore delete failed for ${key}:`, error.message);
   }
+};
+
+export const setItem = async (key, value) => {
+  const ok = await secureSet(key, value);
+  if (!ok) {
+    useFallback = true;
+    await AsyncStorage.setItem(key, value);
+  }
+};
+
+export const getItem = async (key) => {
+  if (useFallback) {
+    try { return await AsyncStorage.getItem(key); } catch { return null; }
+  }
+  const val = await secureGet(key);
+  if (val === null && !useFallback) {
+    const fallback = await AsyncStorage.getItem(key).catch(() => null);
+    if (fallback !== null) {
+      useFallback = true;
+      return fallback;
+    }
+  }
+  return val;
+};
+
+export const deleteItem = async (key) => {
+  await secureDelete(key);
+  try { await AsyncStorage.removeItem(key); } catch {}
 };
 
 export const setObject = async (key, value) => {
@@ -42,11 +66,7 @@ export const setObject = async (key, value) => {
 export const getObject = async (key) => {
   const data = await getItem(key);
   if (data) {
-    try {
-      return JSON.parse(data);
-    } catch {
-      return null;
-    }
+    try { return JSON.parse(data); } catch { return null; }
   }
   return null;
 };

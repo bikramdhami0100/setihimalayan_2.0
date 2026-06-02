@@ -272,7 +272,7 @@ const UserForm = ({ visible, editingUser, form, setForm, saving, onSave, onClose
   return (
     <Portal>
       <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.modalContent}>
-        <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === "ios" ? "padding" : "height"}>
           <View style={styles.flex1}>
             <View style={styles.modalHeader}>
               <View>
@@ -850,7 +850,7 @@ const styles = StyleSheet.create({
   statusBadgeContainer: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, alignSelf: "flex-start" },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusLabel: { fontSize: 9, fontWeight: "900" },
-  modalContent: { backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%" },
+  modalContent: { backgroundColor: "#fff", margin: 14, borderRadius: 24, maxHeight: "92%", flex: 1 },
   modalHeader: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: "#F1F5F9",
