@@ -116,11 +116,11 @@ export const getSeatLayout = async (req, res, next) => {
             `SELECT selected_seats FROM bookings WHERE schedule_id = ? AND status = 'confirmed' AND deleted_at IS NULL`,
             [req.params.id]
         );
-        const bookedSeats = bookedRows.flatMap(row => JSON.parse(row.selected_seats));
+        const bookedSeats = bookedRows.flatMap(row => row.selected_seats);
         
         successResponse(res, 'Seat layout', {
             total_seats: layout.total_seats,
-            seat_layout: JSON.parse(layout.seat_layout),
+            seat_layout: layout.seat_layout,
             locked_seats: lockedSeats,
             booked_seats: bookedSeats
         });

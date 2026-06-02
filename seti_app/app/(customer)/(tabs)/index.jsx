@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   TextInput,
   Modal,
   StatusBar,
@@ -117,7 +118,7 @@ export default function HomeScreen() {
         </View>
         <FlatList data={suggestions} keyExtractor={(item, idx) => `${item}-${idx}`}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => onSelect(item)} activeOpacity={0.6} style={styles.suggestionItem}>
+            <Pressable onPress={() => onSelect(item)} style={({ pressed }) => [styles.suggestionItem, pressed && { backgroundColor: "#f1f5f9" }]}>
               <View style={[styles.suggestionIcon, { backgroundColor: field === "from" ? "#ecfdf5" : "#fef2f2" }]}>
                 <Ionicons name={field === "from" ? "location" : "map-outline"} size={14} color={field === "from" ? "#059669" : "#dc2626"} />
               </View>
@@ -126,7 +127,7 @@ export default function HomeScreen() {
                 <Text style={styles.suggestionSubtext}>{field === "from" ? "Departure" : "Arrival"} point, Nepal</Text>
               </View>
               <Ionicons name="chevron-forward" size={14} color="#cbd5e1" />
-            </TouchableOpacity>
+            </Pressable>
           )}
           showsVerticalScrollIndicator keyboardShouldPersistTaps="always"
         />
@@ -140,7 +141,7 @@ export default function HomeScreen() {
 
       <View style={styles.topCircle} />
 
-      <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+      <ScrollView showsVerticalScrollIndicator={false} bounces={false} keyboardShouldPersistTaps="always">
         <Animated.View entering={FadeInUp.duration(800).delay(100)} style={styles.header}>
           <View style={styles.headerTop}>
             <View style={{ flex: 1 }}>
@@ -173,7 +174,7 @@ export default function HomeScreen() {
           <View style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
             <View style={{ flex: 1, gap: 10 }}>
               <View>
-                <TouchableOpacity onPress={() => {}} activeOpacity={1} style={styles.inputField}>
+                <View style={styles.inputField}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#22c55e" }} />
                     <Text style={styles.inputLabel}>FROM DISTRICT</Text>
@@ -182,11 +183,11 @@ export default function HomeScreen() {
                     onFocus={() => { clearBlurTimeout(); if (from.trim()) { const s = filterSuggestions(from); setFromSuggestions(s); setShowFromSuggestions(s.length > 0); } }}
                     onBlur={handleFromBlur}
                     style={styles.textInput} placeholder="Search your district or city" placeholderTextColor="#94a3b8" underlineColorAndroid="transparent" selectionColor="#1e3a8a" />
-                </TouchableOpacity>
+                </View>
                 {showFromSuggestions && renderSuggestionList(fromSuggestions, selectFromSuggestion, "from")}
               </View>
               <View>
-                <TouchableOpacity onPress={() => {}} activeOpacity={1} style={styles.inputField}>
+                <View style={styles.inputField}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 }}>
                     <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#ef4444" }} />
                     <Text style={[styles.inputLabel, { color: "#dc2626" }]}>TO DISTRICT</Text>
@@ -195,7 +196,7 @@ export default function HomeScreen() {
                     onFocus={() => { clearBlurTimeout(); if (to.trim()) { const s = filterSuggestions(to); setToSuggestions(s); setShowToSuggestions(s.length > 0); } }}
                     onBlur={handleToBlur}
                     style={styles.textInput} placeholder="Search your district or city" placeholderTextColor="#94a3b8" underlineColorAndroid="transparent" selectionColor="#1e3a8a" />
-                </TouchableOpacity>
+                </View>
                 {showToSuggestions && renderSuggestionList(toSuggestions, selectToSuggestion, "to")}
               </View>
             </View>
