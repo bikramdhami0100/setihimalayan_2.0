@@ -1,12 +1,9 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-// API Configuration
-// Use 10.0.2.2 for Android emulator to access host's localhost, otherwise localhost
 const getBaseUrl = () => {
   if (Constants.expoConfig?.extra?.API_URL) return Constants.expoConfig.extra.API_URL;
-  if (Platform.OS === 'android' && !Constants.isDevice) return 'http://10.0.2.2:5000';
-  return 'http://localhost:5000';
+  return 'https://setihimalayan-2-0-git-516948797574.europe-west1.run.app';
 };
 
 const BASE_URL = getBaseUrl();

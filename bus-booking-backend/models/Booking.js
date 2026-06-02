@@ -215,7 +215,7 @@ static async updateStatus(id, status, updateData = {}) {
         countValues.push(booking_status);
     }
     if (payment_status) {
-        whereClause += ' AND b.payment_status = ?';
+        whereClause += ' AND b.status = ?';
         values.push(payment_status);
         countValues.push(payment_status);
     }
@@ -255,18 +255,18 @@ static async updateStatus(id, status, updateData = {}) {
     else if (sortBy === 'route') orderClause = `ORDER BY r.origin ${sortDir}`;
     else if (sortBy === 'departure_time') orderClause = `ORDER BY s.departure_time ${sortDir}`;
     else if (sortBy === 'bus_number') orderClause = `ORDER BY bus.bus_number ${sortDir}`;
-    else if (sortBy === 'seats') orderClause = `ORDER BY b.seats ${sortDir}`;
+    else if (sortBy === 'seats') orderClause = `ORDER BY JSON_LENGTH(b.selected_seats) ${sortDir}`;
     else if (sortBy === 'total_amount') orderClause = `ORDER BY b.total_amount ${sortDir}`;
-    else if (sortBy === 'payment_status') orderClause = `ORDER BY b.payment_status ${sortDir}`;
+    else if (sortBy === 'payment_status') orderClause = `ORDER BY b.status ${sortDir}`;
     else if (sortBy === 'status') orderClause = `ORDER BY b.status ${sortDir}`;
     else if (sortBy === 'created_at') orderClause = `ORDER BY b.created_at ${sortDir}`;
 
     const [rows] = await pool.execute(
         `SELECT b.id, b.booking_reference, b.user_id, b.schedule_id,
-                b.selected_seats, b.total_amount, b.fare, b.discount,
-                b.status, b.payment_status, b.payment_method, b.passenger_details,
-                b.notes, b.created_at, b.confirmed_at, b.cancelled_at,
-                b.boarding_point, b.dropping_point, b.seat_numbers,
+                b.selected_seats, b.total_amount,
+                b.status, b.passenger_details,
+                b.created_at, b.confirmed_at, b.cancelled_at,
+                b.payment_gateway,
                 s.departure_time, s.arrival_time,
                 r.origin, r.destination,
                 bus.bus_number, bus.bus_type,

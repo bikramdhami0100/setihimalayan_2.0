@@ -65,19 +65,21 @@ export default function AdminDashboard() {
       const endDate = dayjs().format("YYYY-MM-DD");
       const startDate = dayjs().subtract(daysOffset, "day").format("YYYY-MM-DD");
 
-      const [dashRes, revRes, popRes] = await Promise.all([
+      const [dashRes, revRes, popRes] = await Promise.allSettled([
         getAdminDashboard(),
         getDailyRevenue(startDate, endDate),
         getPopularRoutes(),
       ]);
 
-      setDashboardStats(dashRes.data.data);
-      setRevenueData(revRes.data.data?.report || []);
-      setPopularRoutes(popRes.data.data?.routes || []);
+      if (dashRes.status === 'fulfilled') setDashboardStats(dashRes.value.data.data);
+      if (revRes.status === 'fulfilled') setRevenueData(revRes.value.data.data?.report || []);
+      if (popRes.status === 'fulfilled') setPopularRoutes(popRes.value.data.data?.routes || []);
+
+      const anyFailed = [dashRes, revRes, popRes].some(r => r.status === 'rejected');
+      if (anyFailed) {
+        console.warn("Some dashboard APIs failed", dashRes.reason, revRes.reason, popRes.reason);
+      }
       setError(null);
-    } catch (err) {
-      console.error("Dashboard fetch error:", err);
-      setError("Failed to load dashboard. Pull down to retry.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);

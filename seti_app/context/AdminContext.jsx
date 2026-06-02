@@ -123,6 +123,8 @@ const fetchRoutes = useCallback(async (isRefreshing = false) => {
     const res = await routeApi.getRoutes({ page, limit, search, sortBy, sortOrder });
     setRoutes(res.data.data.routes || []);
     updatePagination(key, { total: res.data.data.pagination?.total || 0, page: res.data.data.pagination?.page || page });
+  } catch (err) {
+    console.error("Failed to fetch routes", err);
   } finally {
     setKeyLoading(key, false);
     setKeyRefreshing(key, false);
