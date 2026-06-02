@@ -48,8 +48,8 @@ export const getAllSchedules = async (req, res, next) => {
             search,
             sortBy,
             sortOrder,
-            page: page ? parseInt(page) : undefined,
-            limit: limit ? parseInt(limit) : undefined,
+            page: page ? parseInt(page) : null,
+            limit: limit ? parseInt(limit) : null,
         };
         const {schedule,total} = await Schedule.findAll(filters);
         successResponse(res, 'Schedules retrieved', { 

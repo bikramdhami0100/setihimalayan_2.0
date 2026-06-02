@@ -13,8 +13,8 @@ class Route {
                 description, route_image
             ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
-                origin, destination, distance_km || null, duration_minutes || null,
-                base_price, description, route_image
+                origin || null, destination || null, distance_km || null, duration_minutes || null,
+                base_price || null, description || null, route_image || null
             ]
         );
         return result.insertId;

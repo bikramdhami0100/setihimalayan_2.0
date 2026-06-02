@@ -30,8 +30,8 @@ export const getAllBuses = async (req, res, next) => {
             search,
             sortBy,
             sortOrder,
-            page: page ? parseInt(page) : undefined,
-            limit: limit ? parseInt(limit) : undefined
+            page: page ? parseInt(page) : null,
+            limit: limit ? parseInt(limit) : null
         };
         const { buses, total } = await Bus.findAll(filters);
         successResponse(res, 'Buses retrieved', { 

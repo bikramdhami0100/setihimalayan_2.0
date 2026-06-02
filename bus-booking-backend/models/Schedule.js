@@ -1,5 +1,10 @@
 import pool from '../config/database.js';
 
+const toMySQLDatetime = (iso) => {
+    if (!iso) return null;
+    return iso.replace('T', ' ').split('.')[0];
+};
+
 class Schedule {
     static async create(scheduleData) {
         const {
@@ -17,7 +22,7 @@ class Schedule {
                 status, delay_minutes
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                bus_id, route_id, departure_time, arrival_time, base_price,
+                bus_id, route_id, toMySQLDatetime(departure_time), toMySQLDatetime(arrival_time), base_price,
                 available_seats, total_seats, driver_name, driver_phone,
                 conductor_name, conductor_phone, notes,
                 status || 'scheduled', delay_minutes || 0
@@ -161,7 +166,9 @@ class Schedule {
         for (const key of allowed) {
             if (data[key] !== undefined) {
                 fields.push(`${key} = ?`);
-                values.push(data[key]);
+                const val = (key === 'departure_time' || key === 'arrival_time')
+                    ? toMySQLDatetime(data[key]) : data[key];
+                values.push(val);
             }
         }
         if (fields.length === 0) return;
