@@ -99,11 +99,7 @@ export const generateTicketPDF = async (booking, schedule, user) => {
             .text(`Bus Number: ${schedule.bus_number}`, 70, 390)
             .text(`Bus Type: ${schedule.bus_type || 'Standard'}`, 70, 410);
 
-        // Amenities (if any)
-        let amenities = [];
-        try {
-            if (schedule.amenities) amenities = JSON.parse(schedule.amenities);
-        } catch(e) { amenities = []; }
+        const amenities = schedule.amenities || [];
         if (amenities.length) {
             doc.text(`Amenities: ${amenities.join(', ')}`, 70, 430);
         }

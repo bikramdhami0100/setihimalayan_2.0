@@ -28,7 +28,7 @@ export const initiateBooking = async (req, res, next) => {
             `SELECT selected_seats FROM bookings WHERE schedule_id = ? AND status = 'confirmed' AND deleted_at IS NULL`,
             [schedule_id]
         );
-        const bookedSeats = bookedRows.flatMap(row => JSON.parse(row.selected_seats));
+        const bookedSeats = bookedRows.flatMap(row => row.selected_seats);
         
         const unavailable = selected_seats.filter(seat => lockedSeats.includes(seat) || bookedSeats.includes(seat));
         if (unavailable.length > 0) {

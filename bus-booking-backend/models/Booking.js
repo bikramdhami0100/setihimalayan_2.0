@@ -52,10 +52,6 @@ class Booking {
              WHERE b.id = ? AND b.deleted_at IS NULL`,
             [id]
         );
-        if (rows[0]) {
-            rows[0].selected_seats = JSON.parse(rows[0].selected_seats);
-            rows[0].passenger_details = JSON.parse(rows[0].passenger_details);
-        }
         return rows[0];
     }
 
@@ -76,10 +72,6 @@ class Booking {
              WHERE b.booking_reference = ? AND b.deleted_at IS NULL`,
             [ref]
         );
-        if (rows[0]) {
-            rows[0].selected_seats = JSON.parse(rows[0].selected_seats);
-            rows[0].passenger_details = JSON.parse(rows[0].passenger_details);
-        }
         return rows[0];
     }
 // Inside Booking.js
@@ -175,8 +167,8 @@ static async updateStatus(id, status, updateData = {}) {
         );
         return rows.map(row => ({
             ...row,
-            selected_seats: row.selected_seats ? JSON.parse(row.selected_seats) : [],
-            passenger_details: row.passenger_details ? JSON.parse(row.passenger_details) : []
+            selected_seats: row.selected_seats || [],
+            passenger_details: row.passenger_details || []
         }));
     }
 
@@ -295,9 +287,9 @@ static async updateStatus(id, status, updateData = {}) {
 
     const bookings = rows.map(row => ({
         ...row,
-        selected_seats: row.selected_seats ? JSON.parse(row.selected_seats) : [],
-        passenger_details: row.passenger_details ? JSON.parse(row.passenger_details) : [],
-        seats: row.selected_seats ? JSON.parse(row.selected_seats).length : (row.seats || 0),
+        selected_seats: row.selected_seats || [],
+        passenger_details: row.passenger_details || [],
+        seats: row.selected_seats ? row.selected_seats.length : (row.seats || 0),
         seat_numbers: row.seat_numbers ? row.seat_numbers.split(',').map(s => s.trim()) : []
     }));
 
