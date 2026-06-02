@@ -63,7 +63,7 @@ class Route {
     if (page !== undefined && limit !== undefined) {
         const offset = (page - 1) * limit;
         query += ' LIMIT ? OFFSET ?';
-        values.push(Number(limit), Number(offset));
+        values.push(String(limit), String(offset));
     }
 
     const [rows] = await pool.execute(query, values);

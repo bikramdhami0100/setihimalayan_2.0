@@ -171,7 +171,7 @@ static async updateStatus(id, status, updateData = {}) {
              WHERE b.user_id = ? AND b.deleted_at IS NULL
              ORDER BY b.created_at DESC
              LIMIT ? OFFSET ?`,
-            [userId, limit, offset]
+            [userId, String(limit), String(offset)]
         );
         return rows.map(row => ({
             ...row,
@@ -279,7 +279,7 @@ static async updateStatus(id, status, updateData = {}) {
          ${whereClause}
          ${orderClause}
          LIMIT ? OFFSET ?`,
-        [...values, Number(limit), Number(offset)]
+        [...values, String(limit), String(offset)]
     );
 
     const [[{ total }]] = await pool.execute(

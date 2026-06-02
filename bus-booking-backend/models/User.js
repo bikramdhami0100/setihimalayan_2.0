@@ -170,7 +170,7 @@ static async getAll(filters = {}) {
     const offset = (page - 1) * limit;
 
     const paginatedQuery = dataQuery + ' LIMIT ? OFFSET ?';
-    const fullValues = [...values, limit, offset];
+    const fullValues = [...values, String(limit), String(offset)];
 
     const [[{ total }]] = await pool.execute(countQuery, countValues);
     const [rows] = await pool.execute(paginatedQuery, fullValues);

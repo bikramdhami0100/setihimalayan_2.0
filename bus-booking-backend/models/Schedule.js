@@ -77,36 +77,49 @@ class Schedule {
     `;
 
     const values = [];
+    const countValues = [];
 
     if (filters.route_id) {
         query += ' AND s.route_id = ?';
+        countQuery += ' AND s.route_id = ?';
         values.push(filters.route_id);
+        countValues.push(filters.route_id);
     }
 
     if (filters.bus_id) {
         query += ' AND s.bus_id = ?';
+        countQuery += ' AND s.bus_id = ?';
         values.push(filters.bus_id);
+        countValues.push(filters.bus_id);
     }
 
     if (filters.status) {
         query += ' AND s.status = ?';
+        countQuery += ' AND s.status = ?';
         values.push(filters.status);
+        countValues.push(filters.status);
     }
 
     if (filters.from_date) {
         query += ' AND DATE(s.departure_time) >= ?';
+        countQuery += ' AND DATE(s.departure_time) >= ?';
         values.push(filters.from_date);
+        countValues.push(filters.from_date);
     }
 
     if (filters.to_date) {
         query += ' AND DATE(s.departure_time) <= ?';
+        countQuery += ' AND DATE(s.departure_time) <= ?';
         values.push(filters.to_date);
+        countValues.push(filters.to_date);
     }
 
     if (filters.search) {
         const search = `%${filters.search}%`;
         query += ' AND (b.bus_number LIKE ? OR r.origin LIKE ? OR r.destination LIKE ?)';
+        countQuery += ' AND (b.bus_number LIKE ? OR r.origin LIKE ? OR r.destination LIKE ?)';
         values.push(search, search, search);
+        countValues.push(search, search, search);
     }
 
     // Sorting with whitelist to prevent SQL injection
@@ -128,14 +141,14 @@ class Schedule {
     if (filters.page && filters.limit) {
         const offset = (filters.page - 1) * filters.limit;
         query += ' LIMIT ? OFFSET ?';
-        values.push(Number(filters.limit), Number(offset));
+        values.push(String(filters.limit), String(offset));
     } else if (filters.limit) {
         query += ' LIMIT ?';
-        values.push(Number(filters.limit));
+        values.push(String(filters.limit));
     }
 
     const [rows] = await pool.execute(query, values);
-    const [countRows] = await pool.execute(countQuery);
+    const [countRows] = await pool.execute(countQuery, countValues);
     return { schedule: rows, total: countRows[0].total  };
 }
 

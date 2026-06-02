@@ -348,7 +348,7 @@ const BusForm = ({ visible, editingBus, form, setForm, formErrors, clearFieldErr
   return (
   <Portal>
     <Modal visible={visible} onDismiss={onClose} contentContainerStyle={styles.modalContent}>
-      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <KeyboardAvoidingView style={styles.flex1} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View style={styles.flex1}>
           <View style={styles.modalHeader}>
             <View>

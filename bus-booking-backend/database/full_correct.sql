@@ -337,7 +337,6 @@ INSERT INTO `bookings` (`user_id`, `schedule_id`, `booking_reference`, `selected
 (2, 10, 'BK2010', '["F2","F3"]', 1800.00, 'confirmed', 'esewa', 'TXN010', DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW(), NULL, NULL, NULL, NULL, '{"passengers":[{"name":"Gita Karki","age":32,"gender":"F"}]}', NULL, TRUE, NOW(), 'esewa', 'paid', 1800.00, 0.00, 'Gita Karki', '9800000010');
 
 CREATE INDEX idx_bookings_user_status ON bookings(user_id, status);
-CREATE INDEX idx_bookings_schedule_status ON bookings(schedule_id, status);
 CREATE INDEX idx_schedules_route_date ON schedules(route_id, departure_time);
 CREATE INDEX idx_schedules_bus_date ON schedules(bus_id, departure_time);
 CREATE INDEX idx_seat_locks_schedule_expiry ON seat_locks(schedule_id, expires_at);

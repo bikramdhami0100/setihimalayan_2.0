@@ -87,7 +87,7 @@ class Bus {
         if (filters.page && filters.limit) {
             const offset = (filters.page - 1) * filters.limit;
             query += ' LIMIT ? OFFSET ?';
-            values.push(Number(filters.limit), Number(offset));
+            values.push(String(filters.limit), String(offset));
         }
 
         const [rows] = await pool.execute(query, values);
