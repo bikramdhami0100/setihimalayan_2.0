@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 const getBaseUrl = () => {
   if (Constants.expoConfig?.extra?.API_URL) return Constants.expoConfig.extra.API_URL;
-  return 'http://136.111.150.211:5000';
+  return 'http://136.111.150.211';
 };
 
 const BASE_URL = getBaseUrl();
