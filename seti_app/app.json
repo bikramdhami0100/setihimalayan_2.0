@@ -50,6 +50,16 @@
               "scheme": "https",
               "host": "*",
               "pathPrefix": "/payment"
+            },
+            {
+              "scheme": "http",
+              "host": "*",
+              "pathPrefix": "/change-password"
+            },
+            {
+              "scheme": "https",
+              "host": "*",
+              "pathPrefix": "/change-password"
             }
           ],
           "category": [

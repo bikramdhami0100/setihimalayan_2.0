@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, ScrollView, StyleSheet, Dimensions, Modal, TextInput, Alert, TouchableOpacity, Platform, StatusBar } from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
+import { View, ScrollView, StyleSheet, Dimensions, TextInput, Alert, TouchableOpacity, Platform, StatusBar } from "react-native";
+import { Text, ActivityIndicator, Portal, Modal } from "react-native-paper";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { Image } from "expo-image";
@@ -322,36 +322,34 @@ export default function ProfileScreen() {
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      <Modal visible={editModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#eff6ff", alignItems: "center", justifyContent: "center" }}>
-                  <Feather name="edit-2" size={16} color="#1e3a8a" />
-                </View>
-                <Text style={styles.modalTitle}>Edit Profile</Text>
+      <Portal>
+        <Modal visible={editModal} onDismiss={() => setEditModal(false)} contentContainerStyle={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#eff6ff", alignItems: "center", justifyContent: "center" }}>
+                <Feather name="edit-2" size={16} color="#1e3a8a" />
               </View>
-              <TouchableOpacity onPress={() => setEditModal(false)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#f1f5f9", alignItems: "center", justifyContent: "center" }}>
-                <Feather name="x" size={18} color="#64748b" />
-              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
             </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} placeholder="Full Name" />
-              <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="Phone" keyboardType="phone-pad" />
-              <Field label="Date of Birth" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} placeholder="YYYY-MM-DD" />
-              <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="Address" multiline />
-              <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="City" />
-              <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} placeholder="State" />
-              <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="Country" />
-              <Field label="Postal Code" value={form.postal_code} onChange={(v) => setForm({ ...form, postal_code: v })} placeholder="Postal Code" />
-              <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85} style={styles.saveBtn}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
-              </TouchableOpacity>
-            </ScrollView>
+            <TouchableOpacity onPress={() => setEditModal(false)} style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#f1f5f9", alignItems: "center", justifyContent: "center" }}>
+              <Feather name="x" size={18} color="#64748b" />
+            </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Field label="Full Name" value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} placeholder="Full Name" />
+            <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="Phone" keyboardType="phone-pad" />
+            <Field label="Date of Birth" value={form.date_of_birth} onChange={(v) => setForm({ ...form, date_of_birth: v })} placeholder="YYYY-MM-DD" />
+            <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="Address" multiline />
+            <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="City" />
+            <Field label="State" value={form.state} onChange={(v) => setForm({ ...form, state: v })} placeholder="State" />
+            <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="Country" />
+            <Field label="Postal Code" value={form.postal_code} onChange={(v) => setForm({ ...form, postal_code: v })} placeholder="Postal Code" />
+            <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.85} style={styles.saveBtn}>
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>Save Changes</Text>}
+            </TouchableOpacity>
+          </ScrollView>
+        </Modal>
+      </Portal>
     </View>
   );
 }
@@ -473,10 +471,13 @@ const styles = StyleSheet.create({
 
   version: { textAlign: "center", color: "#cbd5e1", marginTop: 20, fontWeight: "600", fontSize: 12 },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
   modalContent: {
     backgroundColor: "#fff", borderTopLeftRadius: 32, borderTopRightRadius: 32,
     maxHeight: "85%", padding: 24, paddingBottom: 40,
+    alignSelf: "stretch",
+    marginHorizontal: 0,
+    marginBottom: 0,
+    marginTop: "auto",
   },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
   modalTitle: { fontSize: 18, fontWeight: "900", color: "#0f172a" },

@@ -10,7 +10,9 @@ import {
     updateProfile,
     changePassword,
     resetPassword,
-    logout
+    logout,
+    sendOtp,
+    loginWithOtp
 } from '../controllers/authController.js';
 import {
     getSettings,
@@ -20,7 +22,9 @@ import {
     validate,
     registerSchema,
     loginSchema,
-    changePasswordSchema
+    changePasswordSchema,
+    sendOtpSchema,
+    verifyOtpSchema
 } from '../middleware/validation.js';
 import { authenticate } from '../middleware/auth.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
@@ -34,6 +38,8 @@ const router = express.Router();
 // Public routes
 router.post('/register', validate(registerSchema), register);
 router.post('/login', authLimiter, validate(loginSchema), login);
+router.post('/send-otp', authLimiter, validate(sendOtpSchema), sendOtp);
+router.post('/verify-otp', authLimiter, validate(verifyOtpSchema), loginWithOtp);
 router.post('/refresh-token', refreshToken);
 router.get('/', (req, res) => res.json({ success: true, message: 'Auth API is working' }));
 // Protected routes

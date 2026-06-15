@@ -116,6 +116,44 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithOtp = async (phone, otp) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authApi.loginWithOtp(phone, otp);
+      const { accessToken, refreshToken, user: userData } = response.data.data;
+      setAuthToken(accessToken);
+      await setAccessToken(accessToken);
+      await setRefreshToken(refreshToken);
+      await setStoredUser(userData);
+      
+      setUser(userData);
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return { success: true, user: userData };
+    } catch (err) {
+      const message = err.response?.data?.message || 'OTP login failed';
+      setError(message);
+      setIsLoading(false);
+      return { success: false, message };
+    }
+  };
+
+  const sendOtp = async (phone) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await authApi.sendOtp(phone);
+      setIsLoading(false);
+      return { success: true, data: response.data.data };
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to send OTP';
+      setError(message);
+      setIsLoading(false);
+      return { success: false, message };
+    }
+  };
+
   const register = async (userData) => {
     setIsLoading(true);
     setError(null);
@@ -222,6 +260,8 @@ export const AuthProvider = ({ children }) => {
         loading: isLoading,
         error,
         login,
+        loginWithOtp,
+        sendOtp,
         register,
         logout,
         loadUser,

@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   Pressable,
   TextInput,
-  Modal,
   StatusBar,
   ImageBackground,
   ActivityIndicator,
@@ -19,6 +18,7 @@ import {
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Portal, Modal } from "react-native-paper";
 import { router } from "expo-router";
 import { Calendar } from "react-native-calendars";
 import dayjs from "dayjs";
@@ -335,19 +335,17 @@ export default function HomeScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <Modal visible={showCalendar} transparent animationType="slide">
-        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <Animated.View entering={FadeInUp.duration(300)} style={styles.calendarModal}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <Text style={{ color: "#0f172a", fontSize: 17, fontWeight: "900" }}>Select Date</Text>
-              <TouchableOpacity onPress={() => setShowCalendar(false)}><Ionicons name="close-circle" size={26} color="#94a3b8" /></TouchableOpacity>
-            </View>
-            <Calendar onDayPress={(day) => { setDate(day.dateString); setShowCalendar(false); }}
-              markedDates={{ [date]: { selected: true, selectedColor: "#1e3a8a" } }} minDate={dayjs().format("YYYY-MM-DD")}
-              theme={{ backgroundColor: "#fff", calendarBackground: "#fff", textSectionTitleColor: "#94a3b8", selectedDayBackgroundColor: "#1e3a8a", selectedDayTextColor: "#fff", todayTextColor: "#1e3a8a", dayTextColor: "#0f172a", textDisabledColor: "#cbd5e1", arrowColor: "#1e3a8a", monthTextColor: "#0f172a", textDayFontWeight: "600", textMonthFontWeight: "800", textDayHeaderFontWeight: "700" }} />
-          </Animated.View>
-        </View>
-      </Modal>
+      <Portal>
+        <Modal visible={showCalendar} onDismiss={() => setShowCalendar(false)} contentContainerStyle={styles.calendarModal}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <Text style={{ color: "#0f172a", fontSize: 17, fontWeight: "900" }}>Select Date</Text>
+            <TouchableOpacity onPress={() => setShowCalendar(false)}><Ionicons name="close-circle" size={26} color="#94a3b8" /></TouchableOpacity>
+          </View>
+          <Calendar onDayPress={(day) => { setDate(day.dateString); setShowCalendar(false); }}
+            markedDates={{ [date]: { selected: true, selectedColor: "#1e3a8a" } }} minDate={dayjs().format("YYYY-MM-DD")}
+            theme={{ backgroundColor: "#fff", calendarBackground: "#fff", textSectionTitleColor: "#94a3b8", selectedDayBackgroundColor: "#1e3a8a", selectedDayTextColor: "#fff", todayTextColor: "#1e3a8a", dayTextColor: "#0f172a", textDisabledColor: "#cbd5e1", arrowColor: "#1e3a8a", monthTextColor: "#0f172a", textDayFontWeight: "600", textMonthFontWeight: "800", textDayHeaderFontWeight: "700" }} />
+        </Modal>
+      </Portal>
     </View>
   );
 }
@@ -780,5 +778,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 20,
     paddingBottom: 40,
+    alignSelf: "stretch",
+    marginHorizontal: 0,
+    marginBottom: 0,
+    marginTop: "auto",
   },
 });

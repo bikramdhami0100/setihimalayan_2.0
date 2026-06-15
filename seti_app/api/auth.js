@@ -2,6 +2,8 @@ import api from './client';
 
 export const register = (userData) => api.post('/auth/register', userData);
 export const login = (email, password) => api.post('/auth/login', { email, password });
+export const sendOtp = (phone) => api.post('/auth/send-otp', { phone });
+export const loginWithOtp = (phone, otp) => api.post('/auth/verify-otp', { phone, otp });
 export const refreshToken = (refreshToken) => api.post('/auth/refresh-token', { refreshToken });
 export const getProfile = () => api.get('/auth/profile');
 export const updateProfile = (data) => api.put('/auth/profile', data);

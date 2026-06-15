@@ -253,6 +253,19 @@ CREATE TABLE `payment_transactions` (
   INDEX idx_created_at (`created_at`)
 );
 
+CREATE TABLE `otp_codes` (
+  `id` INT PRIMARY KEY AUTO_INCREMENT,
+  `phone` VARCHAR(15) NOT NULL,
+  `otp_code` VARCHAR(6) NOT NULL,
+  `is_used` BOOLEAN DEFAULT FALSE,
+  `expires_at` DATETIME NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_phone_otp (`phone`, `otp_code`),
+  INDEX idx_expires_at (`expires_at`),
+  INDEX idx_cleanup (`is_used`, `expires_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE `audit_logs` (
   `id` INT PRIMARY KEY AUTO_INCREMENT,
   `user_id` INT NULL,

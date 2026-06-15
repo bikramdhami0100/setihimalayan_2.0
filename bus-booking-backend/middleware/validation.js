@@ -72,12 +72,21 @@ export const loginSchema = Joi.object({
     password: Joi.string().required()
 });
 
+export const sendOtpSchema = Joi.object({
+    phone: Joi.string().pattern(/^[0-9]{7,15}$/).required()
+});
+
+export const verifyOtpSchema = Joi.object({
+    phone: Joi.string().pattern(/^[0-9]{7,15}$/).required(),
+    otp: Joi.string().length(6).pattern(/^[0-9]{6}$/).required()
+});
+
 export const roleUpdateSchema = Joi.object({
     role: Joi.string().valid('passenger', 'admin', 'super_admin').required()
 });
 
 export const changePasswordSchema = Joi.object({
-    email: Joi.string().email().required(),
+    email: Joi.string().email().optional(),
     newPassword: Joi.string().min(6).required(),
 });
 

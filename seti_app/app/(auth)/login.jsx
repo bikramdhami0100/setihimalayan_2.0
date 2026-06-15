@@ -1,36 +1,53 @@
 import React, { useState, useContext } from "react";
 import { View, SafeAreaView, ScrollView, StyleSheet, KeyboardAvoidingView, Platform, Dimensions, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Text, TextInput, Button, Surface, IconButton, Checkbox, Divider, Snackbar } from "react-native-paper";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Text, TextInput, Button, Surface, IconButton, Checkbox, Divider, Snackbar, SegmentedButtons } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { AuthContext } from "../../context/AuthContext";
-import { setItem } from "../../utils/storage";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Login() {
+  const [loginMode, setLoginMode] = useState("email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
 
-  const { login, isLoading, error, clearError } = useContext(AuthContext);
+  const { login, loginWithOtp, sendOtp, isLoading, error, clearError } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!email || !password) return;
-
     const result = await login(email, password);
-    // setItem("user", JSON.stringify(result.user));   // Store user data for session persistence, adjust as needed
-    console.log(result.user)
     if (result.success) {
       const isAdmin = result.user?.role === 'admin' || result.user?.role === 'super_admin';
-      if (isAdmin) {
-        router.replace("/(admin)/dashboard");
-      } else {
-        router.replace("/(customer)/");
-      }
+      router.replace(isAdmin ? "/(admin)/dashboard" : "/(customer)/");
+    } else {
+      setSnackbarVisible(true);
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!phone) return;
+    const result = await sendOtp(phone);
+    if (result.success) {
+      setOtpSent(true);
+    } else {
+      setSnackbarVisible(true);
+    }
+  };
+
+  const handleOtpLogin = async () => {
+    if (!phone || !otp) return;
+    const result = await loginWithOtp(phone, otp);
+    if (result.success) {
+      const isAdmin = result.user?.role === 'admin' || result.user?.role === 'super_admin';
+      router.replace(isAdmin ? "/(admin)/dashboard" : "/(customer)/");
     } else {
       setSnackbarVisible(true);
     }
@@ -66,56 +83,130 @@ export default function Login() {
                   <Text variant="headlineSmall" style={styles.cardTitle}>Welcome Back</Text>
                   <Text variant="bodySmall" style={styles.cardSubtitle}>Sign in to your account to manage bookings</Text>
 
-                  <TextInput
-                    label="Email Address"
-                    value={email}
-                    onChangeText={setEmail}
-                    mode="outlined"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    left={<TextInput.Icon icon="email" color="#64748b" />}
-                    style={styles.input}
-                    outlineColor="#e2e8f0"
-                    activeOutlineColor="#1e3a8a"
+                  <SegmentedButtons
+                    value={loginMode}
+                    onValueChange={(val) => { setLoginMode(val); setOtpSent(false); }}
+                    buttons={[
+                      { value: 'email', label: 'Email' },
+                      { value: 'phone', label: 'Phone' },
+                    ]}
+                    style={styles.segment}
                   />
 
-                  <TextInput
-                    label="Password"
-                    value={password}
-                    onChangeText={setPassword}
-                    mode="outlined"
-                    secureTextEntry={!showPassword}
-                    left={<TextInput.Icon icon="lock" color="#64748b" />}
-                    right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} color="#64748b" />}
-                    style={styles.input}
-                    outlineColor="#e2e8f0"
-                    activeOutlineColor="#1e3a8a"
-                  />
-
-                  <View style={styles.row}>
-                    <View style={styles.rememberMe}>
-                      <Checkbox
-                        status={rememberMe ? 'checked' : 'unchecked'}
-                        onPress={() => setRememberMe(!rememberMe)}
-                        color="#1e3a8a"
+                  {loginMode === "email" ? (
+                    <>
+                      <TextInput
+                        label="Email Address"
+                        value={email}
+                        onChangeText={setEmail}
+                        mode="outlined"
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        left={<TextInput.Icon icon="email" color="#64748b" />}
+                        style={styles.input}
+                        outlineColor="#e2e8f0"
+                        activeOutlineColor="#1e3a8a"
                       />
-                      <Text variant="bodySmall" style={styles.rememberMeText} onPress={() => setRememberMe(!rememberMe)}>Remember me</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
-                      <Text variant="bodySmall" style={styles.forgotText}>Forgot Password?</Text>
-                    </TouchableOpacity>
-                  </View>
 
-                  <Button
-                    mode="contained"
-                    onPress={handleLogin}
-                    style={styles.loginButton}
-                    labelStyle={styles.loginButtonLabel}
-                    contentStyle={styles.loginButtonContent}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <ActivityIndicator color="white" /> : "Login"}
-                  </Button>
+                      <TextInput
+                        label="Password"
+                        value={password}
+                        onChangeText={setPassword}
+                        mode="outlined"
+                        secureTextEntry={!showPassword}
+                        left={<TextInput.Icon icon="lock" color="#64748b" />}
+                        right={<TextInput.Icon icon={showPassword ? "eye-off" : "eye"} onPress={() => setShowPassword(!showPassword)} color="#64748b" />}
+                        style={styles.input}
+                        outlineColor="#e2e8f0"
+                        activeOutlineColor="#1e3a8a"
+                      />
+
+                      <View style={styles.row}>
+                        <View style={styles.rememberMe}>
+                          <Checkbox
+                            status={rememberMe ? 'checked' : 'unchecked'}
+                            onPress={() => setRememberMe(!rememberMe)}
+                            color="#1e3a8a"
+                          />
+                          <Text variant="bodySmall" style={styles.rememberMeText} onPress={() => setRememberMe(!rememberMe)}>Remember me</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => router.push("/(auth)/forgot-password")}>
+                          <Text variant="bodySmall" style={styles.forgotText}>Forgot Password?</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <Button
+                        mode="contained"
+                        onPress={handleLogin}
+                        style={styles.loginButton}
+                        labelStyle={styles.loginButtonLabel}
+                        contentStyle={styles.loginButtonContent}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? <ActivityIndicator color="white" /> : "Login"}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <TextInput
+                        label="Phone Number"
+                        value={phone}
+                        onChangeText={setPhone}
+                        mode="outlined"
+                        keyboardType="phone-pad"
+                        autoCapitalize="none"
+                        left={<TextInput.Icon icon="phone" color="#64748b" />}
+                        style={styles.input}
+                        outlineColor="#e2e8f0"
+                        activeOutlineColor="#1e3a8a"
+                      />
+
+                      {otpSent && (
+                        <TextInput
+                          label="Enter OTP"
+                          value={otp}
+                          onChangeText={setOtp}
+                          mode="outlined"
+                          keyboardType="number-pad"
+                          maxLength={6}
+                          left={<TextInput.Icon icon="lock" color="#64748b" />}
+                          style={styles.input}
+                          outlineColor="#e2e8f0"
+                          activeOutlineColor="#1e3a8a"
+                        />
+                      )}
+
+                      {otpSent ? (
+                        <Button
+                          mode="contained"
+                          onPress={handleOtpLogin}
+                          style={styles.loginButton}
+                          labelStyle={styles.loginButtonLabel}
+                          contentStyle={styles.loginButtonContent}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <ActivityIndicator color="white" /> : "Verify & Login"}
+                        </Button>
+                      ) : (
+                        <Button
+                          mode="contained"
+                          onPress={handleSendOtp}
+                          style={styles.loginButton}
+                          labelStyle={styles.loginButtonLabel}
+                          contentStyle={styles.loginButtonContent}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <ActivityIndicator color="white" /> : "Send OTP"}
+                        </Button>
+                      )}
+
+                      {otpSent && (
+                        <TouchableOpacity onPress={handleSendOtp} style={styles.resendOtp}>
+                          <Text variant="bodySmall" style={styles.resendOtpText}>Resend OTP</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
 
                   <View style={styles.dividerContainer}>
                     <Divider style={styles.divider} />
@@ -192,6 +283,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
     minHeight: height,
+  },
+  segment: {
+    marginBottom: 20,
   },
   topCircle: {
     position: "absolute",
@@ -342,6 +436,15 @@ const styles = StyleSheet.create({
     color: "#3b82f6",
     fontWeight: "900",
     fontSize: 14,
+  },
+  resendOtp: {
+    alignItems: "center",
+    marginTop: 12,
+  },
+  resendOtpText: {
+    color: "#3b82f6",
+    fontWeight: "800",
+    fontSize: 12,
   },
   securityBadge: {
     flexDirection: "row",

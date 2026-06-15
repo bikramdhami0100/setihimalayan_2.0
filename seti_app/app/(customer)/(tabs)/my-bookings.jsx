@@ -5,7 +5,6 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
   StatusBar,
   Alert,
   Platform,
@@ -14,6 +13,7 @@ import {
 } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Portal, Modal } from "react-native-paper";
 import { router } from "expo-router";
 import QRCode from "react-native-qrcode-svg";
 import dayjs from "dayjs";
@@ -232,12 +232,11 @@ function TicketModal({ booking, onClose }) {
   }, [booking, downloading]);
 
   return (
-    <Modal visible animationType="slide" transparent>
-      <View style={styles.modalOverlay}>
-        <Animated.View entering={FadeInUp.duration(400)} style={styles.modalSheet}>
-          <View style={styles.modalHandle} />
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={styles.modalHeader}>
+    <Portal>
+      <Modal visible onDismiss={onClose} contentContainerStyle={styles.modalSheet}>
+        <View style={styles.modalHandle} />
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.modalHeader}>
               <View>
                 <Text style={styles.modalLabel}>E-TICKET</Text>
                 <Text style={styles.modalRef}>{booking.booking_reference}</Text>
@@ -311,10 +310,9 @@ function TicketModal({ booking, onClose }) {
                 <Text style={styles.shareText}>Share</Text>
               </TouchableOpacity>
             </Animated.View>
-          </ScrollView>
-        </Animated.View>
-      </View>
-    </Modal>
+        </ScrollView>
+      </Modal>
+    </Portal>
   );
 }
 
@@ -628,7 +626,6 @@ const styles = StyleSheet.create({
   },
   securityText: { fontSize: 10, fontWeight: "900", color: "#1e40af", letterSpacing: 1 },
 
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
   modalSheet: {
     backgroundColor: "#f8fafc",
     borderTopLeftRadius: 28,
@@ -637,6 +634,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 32,
+    alignSelf: "stretch",
+    marginHorizontal: 0,
+    marginBottom: 0,
+    marginTop: "auto",
   },
   modalHandle: {
     width: 40,

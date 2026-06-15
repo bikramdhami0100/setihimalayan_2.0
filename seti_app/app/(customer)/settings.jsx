@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { View, SafeAreaView, ScrollView, StyleSheet, Alert, Platform } from "react-native";
-import { Text, Surface, Divider, Button, ActivityIndicator, Snackbar, Switch, Modal, TextInput } from "react-native-paper";
+import { Text, Surface, Divider, Button, ActivityIndicator, Snackbar, Switch, TextInput } from "react-native-paper";
+import { Portal, Modal } from "react-native-paper";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { AuthContext } from "../../context/AuthContext";
 import * as authApi from "../../api/auth";
@@ -263,60 +264,58 @@ export default function SettingsScreen() {
         <View style={styles.bottomSpacer} />
       </ScrollView>
 
-      <Modal visible={pwModal} animationType="slide" transparent={true} onDismiss={() => setPwModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Change Password</Text>
-              <Button compact onPress={() => setPwModal(false)} icon="close">
-                Close
-              </Button>
-            </View>
-            <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={styles.fieldLabel}>Current Password</Text>
-              <TextInput
-                style={styles.input}
-                value={pwForm.currentPassword}
-                onChangeText={(v) => setPwForm({ ...pwForm, currentPassword: v })}
-                placeholder="Enter current password"
-                secureTextEntry
-                mode="flat"
-                underlineStyle={{ display: 'none' }}
-              />
-              <Text style={styles.fieldLabel}>New Password</Text>
-              <TextInput
-                style={styles.input}
-                value={pwForm.newPassword}
-                onChangeText={(v) => setPwForm({ ...pwForm, newPassword: v })}
-                placeholder="Enter new password"
-                secureTextEntry
-                mode="flat"
-                underlineStyle={{ display: 'none' }}
-              />
-              <Text style={styles.fieldLabel}>Confirm New Password</Text>
-              <TextInput
-                style={styles.input}
-                value={pwForm.confirmPassword}
-                onChangeText={(v) => setPwForm({ ...pwForm, confirmPassword: v })}
-                placeholder="Confirm new password"
-                secureTextEntry
-                mode="flat"
-                underlineStyle={{ display: 'none' }}
-              />
-              <Button
-                mode="contained"
-                onPress={handleChangePassword}
-                style={styles.saveButton}
-                loading={changingPw}
-                disabled={changingPw}
-                buttonColor="#1e3a8a"
-              >
-                Update Password
-              </Button>
-            </ScrollView>
+      <Portal>
+        <Modal visible={pwModal} onDismiss={() => setPwModal(false)} contentContainerStyle={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <Button compact onPress={() => setPwModal(false)} icon="close">
+              Close
+            </Button>
           </View>
-        </View>
-      </Modal>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.fieldLabel}>Current Password</Text>
+            <TextInput
+              style={styles.input}
+              value={pwForm.currentPassword}
+              onChangeText={(v) => setPwForm({ ...pwForm, currentPassword: v })}
+              placeholder="Enter current password"
+              secureTextEntry
+              mode="flat"
+              underlineStyle={{ display: 'none' }}
+            />
+            <Text style={styles.fieldLabel}>New Password</Text>
+            <TextInput
+              style={styles.input}
+              value={pwForm.newPassword}
+              onChangeText={(v) => setPwForm({ ...pwForm, newPassword: v })}
+              placeholder="Enter new password"
+              secureTextEntry
+              mode="flat"
+              underlineStyle={{ display: 'none' }}
+            />
+            <Text style={styles.fieldLabel}>Confirm New Password</Text>
+            <TextInput
+              style={styles.input}
+              value={pwForm.confirmPassword}
+              onChangeText={(v) => setPwForm({ ...pwForm, confirmPassword: v })}
+              placeholder="Confirm new password"
+              secureTextEntry
+              mode="flat"
+              underlineStyle={{ display: 'none' }}
+            />
+            <Button
+              mode="contained"
+              onPress={handleChangePassword}
+              style={styles.saveButton}
+              loading={changingPw}
+              disabled={changingPw}
+              buttonColor="#1e3a8a"
+            >
+              Update Password
+            </Button>
+          </ScrollView>
+        </Modal>
+      </Portal>
 
       {error && (
         <Snackbar visible={!!error} onDismiss={() => setError(null)} duration={3000} style={styles.snackbarError}>
@@ -425,11 +424,6 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: 60,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
   modalContent: {
     backgroundColor: "white",
     borderTopLeftRadius: 32,
@@ -437,6 +431,10 @@ const styles = StyleSheet.create({
     maxHeight: "70%",
     padding: 24,
     paddingBottom: 40,
+    alignSelf: "stretch",
+    marginHorizontal: 0,
+    marginBottom: 0,
+    marginTop: "auto",
   },
   modalHeader: {
     flexDirection: "row",
