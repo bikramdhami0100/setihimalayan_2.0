@@ -2,7 +2,7 @@ name: Deploy Backend to GCE VM
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
     paths:
       - 'bus-booking-backend/**'
       - '.github/workflows/deploy.yml'
