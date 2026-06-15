@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 const getBaseUrl = () => {
   if (Constants.expoConfig?.extra?.API_URL) return Constants.expoConfig.extra.API_URL;
-  return 'https://setihimalayan-2-0-git-516948797574.europe-west1.run.app';
+  return 'http://136.111.150.211:5000';
 };
 
 const BASE_URL = getBaseUrl();
