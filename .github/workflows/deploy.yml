@@ -1,0 +1,24 @@
+name: Deploy Backend to GCE VM
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'bus-booking-backend/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into VM, pull code, rebuild & restart
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd ~/setihimalayan_2.0/bus-booking-backend
+            git pull origin main
+            docker-compose up -d --build
