@@ -1,5 +1,8 @@
 # Name
 ### {{module_name}}
+$env:JAVA_HOME = "C:\Program Files\Microsoft\jdk-17.0.19.10-hotspot"
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+.\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
 
 # Synopsis
 {{synopsis}}
